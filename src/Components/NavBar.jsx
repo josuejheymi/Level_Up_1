@@ -9,6 +9,9 @@ export default function Navbar() {
                         <li className="nav-item">
                             <NavLink to="/" className="nav-link">Inicio</NavLink>
                         </li>
+                        <li>
+                            <p>CHIIII</p>
+                        </li>
                         <li className="nav-item">
                             <NavLink to="/about" className="nav-link">Acerca de</NavLink>
                         </li>
