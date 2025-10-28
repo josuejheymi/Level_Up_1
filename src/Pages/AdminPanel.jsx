@@ -1,5 +1,5 @@
-import ProductForm from "../Components/ProductForm";
-import ProductList from "../Components/ProductList";
+import ProductForm from "../Components/forms/ProductForm";
+import ProductList from "../Components/common/ProductList";
 export default function AdminPanel({ products, onAddProduct }) {
     return (
         <section className="container my-5">
