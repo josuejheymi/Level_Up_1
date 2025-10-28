@@ -1,15 +1,16 @@
 import { Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { products as initialProducts } from "./Data/products";
-import Navbar from "./Components/NavBar";
+import Navbar from "./Components/common/NavBar";
 import Home from "./Pages/Home";
 import About from "./Pages/About";
 import Contact from "./Pages/Contact";
 import AdminPanel from "./Pages/AdminPanel";
-
+import Cart from "./Pages/Cart";
 
 export default function App() {
   const [products, setProducts] = useState(initialProducts); // agregamos los productos al estado
+
   return (
     <div className="d-flex flex-column min-vh-100">
       <Navbar />
@@ -29,6 +30,7 @@ export default function App() {
   />
   <Route path="/About" element={<About />} />
   <Route path="/Contact" element={<Contact />} />
+  <Route path="/cart" element={<Cart />} />
   <Route path="*" element={<h1>404 - Página no encontrada</h1>} />
 </Routes>
 

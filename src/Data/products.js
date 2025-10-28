@@ -1,4 +1,12 @@
 import audifonos from "../assets/audifonos.jpg";
+import call_duti from "../assets/call_of_duty.jpg";
+import ps1_image from "../assets/ps1-image.jpg";
+import pc_gamer1 from "../assets/pc_gamer1.jpg";
+import silla from "../assets/silla.jpg";
+import guitar_hero_3 from "../assets/guitar_hero_3.jpg";
+import sonic from "../assets/sonic.jpg";
+import super_mario from "../assets/super_mario.jpg";   
+
 // Array de productos
 export const products = [
     {
@@ -8,13 +16,13 @@ export const products = [
         precio: 19990,
         imagen: audifonos,
         descripcion: "Los mejores audifonos con: Alcance inalámbrico de 0 m, modo manos libres incluido y Con cancelación de ruido."
-    },/*
+    },
     {
         id: 2,
         nombre: "Call of Duty",
         categoria: "juegos",
         precio: 59990,
-        imagen: "img/call_of_duty.jpg",
+        imagen: call_duti,
         descripcion: "Call of Duty (2003) es un shooter en primera persona ambientado en la Segunda Guerra Mundial que te permite jugar desde la perspectiva de soldados estadounidenses, británicos y soviéticos en campañas interconectadas, viviendo el conflicto a través de distintas batallas importantes como el desembarco de Normandía y la Batalla de Stalingrado."
     },
     {
@@ -22,7 +30,7 @@ export const products = [
         nombre: "PlayStation 5",
         categoria: "consolas",
         precio: 549990,
-        imagen: "img/ps1-image.jpg",
+        imagen: ps1_image,
         descripcion: "La consola de última generación de Sony, con gráficos impresionantes y tiempos de carga ultrarrápidos."
     },
     {
@@ -30,7 +38,7 @@ export const products = [
         nombre: "PC Gamer ASUS ROG Strix",
         categoria: "computadores",
         precio: 1299990,
-        imagen: "img/pc_gamer1.jpg",
+        imagen: pc_gamer1,
         descripcion: "Potente equipo diseñado para gamers exigentes, equipado con los últimos componentes."
     },
     {
@@ -38,7 +46,7 @@ export const products = [
         nombre: "Silla Gamer SecretLab Titan",
         categoria: "sillas",
         precio: 349990,
-        imagen: "img/silla.jpg",
+        imagen: silla,
         descripcion: "Silla diseñada para máximo confort con soporte ergonómico y personalización ajustable."
     },
     {
@@ -46,7 +54,7 @@ export const products = [
         nombre: "Guitar Hero",
         categoria: "juegos",
         precio: 49990,
-        imagen: "img/guitar_hero_3.jpg",
+        imagen: guitar_hero_3,
         descripcion: "Guitar Hero III: Legends of Rock es un videojuego musical en el que el jugador simula tocar la guitarra para interpretar canciones de rock, desbloqueando nuevas canciones, guitarras y personajes a medida que progresa en el modo carrera. La historia sigue el viaje de un guitarrista que, tras unirse a una banda, se enfrenta a leyendas del rock como Tom Morello y Slash, y es retado hasta el infierno para convertirse en una leyenda del rock."
     },
     {
@@ -54,7 +62,7 @@ export const products = [
         nombre: "Sonic",
         categoria: "juegos",
         precio: 29990,
-        imagen: "img/sonic.jpg",
+        imagen: sonic,
         descripcion: "Un erizo azul supersónico llamado Sonic debe frustrar los planes del científico loco Doctor Robotnik en la Isla Sur. Robotnik ha capturado a los animales de la isla y los ha convertido en robots, además de intentar robar las seis Esmeraldas del Caos para dominar el mundo. Sonic recorre diversas zonas de la isla, rescatando animales, recolectando anillos y enfrentándose a los robots y a Robotnik para restaurar la paz."
     },
     {
@@ -62,7 +70,7 @@ export const products = [
         nombre: "Super Mario Bros U Deluxe",
         categoria: "juegos",
         precio: 14990,
-        imagen: "img/super_mario.jpg",
+        imagen: super_mario,
         descripcion: "Se centra en los hermanos Mario y Luigi, fontaneros del Reino Champiñón, que deben rescatar a la Princesa Peach y a su reino del malvado Rey Koopa (Bowser). Bowser ha invadido el reino, transformando a sus habitantes en piedras y ladrillos mediante magia negra, y solo la Princesa Peach puede revertir el hechizo."
-    }*/
+    }
 ];
