@@ -1,11 +1,11 @@
-import audifonos from "../assets/audifonos.jpg";
-import call_duti from "../assets/call_of_duty.jpg";
-import ps1_image from "../assets/ps1-image.jpg";
-import pc_gamer1 from "../assets/pc_gamer1.jpg";
-import silla from "../assets/silla.jpg";
-import guitar_hero_3 from "../assets/guitar_hero_3.jpg";
-import sonic from "../assets/sonic.jpg";
-import super_mario from "../assets/super_mario.jpg";   
+import audifonos from "../Assets/audifonos.jpg";
+import call_duti from "../Assets/call_of_duty.jpg";
+import ps1_image from "../Assets/ps1-image.jpg";
+import pc_gamer1 from "../Assets/pc_gamer1.jpg";
+import silla from "../Assets/silla.jpg";
+import guitar_hero_3 from "../Assets/guitar_hero_3.jpg";
+import sonic from "../Assets/sonic.jpg";
+import super_mario from "../Assets/super_mario.jpg";   
 
 // Array de productos
 export const products = [
