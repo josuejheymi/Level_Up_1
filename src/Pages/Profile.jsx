@@ -3,9 +3,12 @@ import { useUser } from "../Components/user/UserContext";
 import { useCart } from "../Components/cart/CartContext";
 
 export default function Profile() {
+    // Obtiene datos y funciones del contexto de usuario
     const { currentUser, logoutUser, users, setUsers } = useUser();
+    // Obtiene los items del carrito
     const { cartItems } = useCart();
 
+    // Estado para los datos del formulario de perfil
     const [formData, setFormData] = useState({
         nombre: "",
         email: "",
@@ -16,7 +19,7 @@ export default function Profile() {
         indicaciones: "",
     });
 
-    // Inicializar el formulario con los datos del usuario logueado
+    // Carga los datos del usuario actual al montar el componente
     useEffect(() => {
         if (currentUser) {
             setFormData({
@@ -33,31 +36,37 @@ export default function Profile() {
         }
     }, [currentUser]);
 
+    // Maneja cambios en los inputs del formulario
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    // Guarda los cambios del perfil
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Guardar cambios en localStorage y actualizar currentUser
+        // Actualiza el usuario actual y la lista de usuarios
         const updatedUser = { ...currentUser, ...formData };
         const updatedUsers = users.map((u) =>
             u.id === currentUser.id ? updatedUser : u
         );
         setUsers(updatedUsers);
+        // Persiste los cambios en localStorage
         localStorage.setItem("users", JSON.stringify(updatedUsers));
         localStorage.setItem("currentUser", JSON.stringify(updatedUser));
         alert("Datos actualizados correctamente!");
     };
 
+    // Si no hay usuario logueado, muestra mensaje
     if (!currentUser) return <p>No has iniciado sesión.</p>;
 
     return (
         <div className="container mt-4">
             <h2>Perfil de {currentUser.nombre}</h2>
 
+            {/* Formulario de edición de perfil */}
             <form onSubmit={handleSubmit}>
+                {/* Campo Nombre */}
                 <div className="mb-3">
                     <label className="form-label">Nombre</label>
                     <input
@@ -69,6 +78,7 @@ export default function Profile() {
                     />
                 </div>
 
+                {/* Campo Email */}
                 <div className="mb-3">
                     <label className="form-label">Email</label>
                     <input
@@ -80,6 +90,7 @@ export default function Profile() {
                     />
                 </div>
 
+                {/* Campo Calle */}
                 <div className="mb-3">
                     <label className="form-label">Calle</label>
                     <input
@@ -91,6 +102,7 @@ export default function Profile() {
                     />
                 </div>
 
+                {/* Campo Departamento (opcional) */}
                 <div className="mb-3">
                     <label className="form-label">Departamento (opcional)</label>
                     <input
@@ -102,6 +114,7 @@ export default function Profile() {
                     />
                 </div>
 
+                {/* Campo Región */}
                 <div className="mb-3">
                     <label className="form-label">Región</label>
                     <input
@@ -113,6 +126,7 @@ export default function Profile() {
                     />
                 </div>
 
+                {/* Campo Comuna */}
                 <div className="mb-3">
                     <label className="form-label">Comuna</label>
                     <input
@@ -124,6 +138,7 @@ export default function Profile() {
                     />
                 </div>
 
+                {/* Campo Indicaciones (opcional) */}
                 <div className="mb-3">
                     <label className="form-label">Indicaciones (opcional)</label>
                     <input
@@ -135,6 +150,7 @@ export default function Profile() {
                     />
                 </div>
 
+                {/* Botones de acción */}
                 <button type="submit" className="btn btn-primary">
                     Guardar cambios
                 </button>
@@ -147,6 +163,7 @@ export default function Profile() {
                 </button>
             </form>
 
+            {/* Sección de compras realizadas */}
             <div className="mt-4">
                 <h3>Compras realizadas</h3>
                 {cartItems.length === 0 ? (

@@ -1,13 +1,29 @@
-module.exports = function (config) {
+module.exports = function(config) {
   config.set({
-    frameworks: ["jasmine"],
+    basePath: '',
+    frameworks: ['jasmine'],
     files: [
-      "src/utils/**/*.js", // incluye toda la lógica primero
-      "src/**/*.spec.js", // incluye los tests después
+      'src/**/*.spec.js' // Aquí van todos los archivos de prueba
     ],
-    reporters: ["spec"], // reporter legible (recomendado)
-    browsers: ["ChromeHeadless"], // usa Chrome invisible
-    singleRun: true, // corre una vez y termina
-    concurrency: Infinity,
+    preprocessors: {
+      'src/**/*.spec.js': ['webpack']
+    },
+    webpack: {
+      // Configuración mínima de webpack para pruebas
+      module: {
+        rules: [
+          {
+            test: /\.jsx?$/,
+            exclude: /node_modules/,
+            use: {
+              loader: 'babel-loader'
+            }
+          }
+        ]
+      }
+    },
+    reporters: ['progress', 'coverage'],
+    browsers: ['ChromeHeadless'],
+    singleRun: true
   });
 };
