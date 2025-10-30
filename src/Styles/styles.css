@@ -1,10 +1,290 @@
-body {
+
+/*body {
     background-color: white;
 
-}
-/*Por el momento, hace  que el nav superior se mantenga al scrolear hacia abajo */
+}*/
+/*Por el momento, hace  que el nav superior se mantenga al scrolear hacia abajo 
 .navbar { 
   position: sticky;
   top: 0;
   z-index: 1000;
+}
+*/
+/* === VARIABLES DE COLOR Y FUENTE === */
+:root {
+  --bg-primary: #000000;
+  --accent-blue: #1e90ff;
+  --accent-green: #39ff14;
+  --text-primary: #ffffff;
+  --text-secondary: #d3d3d3;
+  --font-header: 'Orbitron', sans-serif;
+  --font-body: 'Roboto', sans-serif;
+}
+
+/* === RESETEO GENERAL === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* === CONTAINERS GENERALES === */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* === NAVBAR PERSONALIZADO (Bootstrap override) === */
+.navbar {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(4px);
+  border-bottom: 2px solid var(--accent-blue);
+}
+
+.navbar-brand {
+  font-family: var(--font-header);
+  color: var(--accent-blue) !important;
+  font-weight: bold;
+}
+
+.navbar-brand:hover {
+  color: var(--accent-green) !important;
+}
+
+.nav-link {
+  color: var(--text-primary) !important;
+  transition: color 0.3s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--accent-green) !important;
+}
+
+.navbar-toggler {
+  border-color: var(--accent-blue) !important;
+}
+
+.navbar-toggler-icon {
+  filter: hue-rotate(180deg);
+}
+
+/* === CART ICON === */
+.nav-link svg {
+  color: var(--accent-blue);
+  transition: color 0.3s;
+}
+
+.nav-link svg:hover {
+  color: var(--accent-green);
+}
+
+/* === HERO SECTION === */
+.hero {
+  background: linear-gradient(
+      rgba(0, 0, 0, 0.7),
+      rgba(0, 0, 0, 0.7)
+    ),
+    url('../Assets/guitar_hero_3.jpg') no-repeat center center / cover;
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.hero h2 {
+  font-family: var(--font-header);
+  font-size: 3rem;
+  color: var(--accent-green);
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.btn-custom {
+  background-color: var(--accent-blue);
+  color: var(--text-primary);
+  padding: 0.8rem 2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.btn-custom:hover {
+  background-color: var(--accent-green);
+  color: var(--bg-primary);
+}
+
+/* === PRODUCT GRID === */
+.featured-products {
+  padding: 4rem 0;
+}
+
+.featured-products h2 {
+  text-align: center;
+  font-family: var(--font-header);
+  color: var(--accent-blue);
+  margin-bottom: 2rem;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.product-card {
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 15px var(--accent-blue);
+}
+
+.product-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.product-info {
+  padding: 1rem;
+}
+
+.product-title {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.product-price {
+  color: var(--accent-green);
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.add-to-cart {
+  width: 100%;
+  background-color: var(--accent-blue);
+  color: #fff;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.add-to-cart:hover {
+  background-color: var(--accent-green);
+  color: var(--bg-primary);
+}
+
+/* === FORMULARIOS === */
+.form-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(30, 144, 255, 0.2);
+}
+
+.form-title {
+  text-align: center;
+  font-family: var(--font-header);
+  color: var(--accent-blue);
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  background-color: #2a2a2a !important;
+  border: 1px solid #333 !important;
+  color: var(--text-primary) !important;
+}
+
+.form-control:focus {
+  border-color: var(--accent-blue) !important;
+  box-shadow: 0 0 6px var(--accent-blue);
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 0.9rem;
+}
+
+/* === FOOTER === */
+footer {
+  background-color: #0a0a0a;
+  padding: 3rem 0 1rem;
+  margin-top: 3rem;
+}
+
+footer .container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+}
+
+.footer-section h3,
+.footer-section h4 {
+  font-family: var(--font-header);
+  color: var(--accent-blue);
+  margin-bottom: 1rem;
+}
+
+.footer-section a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-section a:hover {
+  color: var(--accent-green);
+}
+
+.copyright {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+  color: var(--text-secondary);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .hero h2 {
+    font-size: 2rem;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .navbar-brand {
+    font-size: 1.1rem;
+  }
 }

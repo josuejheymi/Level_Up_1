@@ -1,32 +1,57 @@
-// Aun esta en proceso-Posteriormente -> Realizara búsquedas en tiempo real y buscara al presionar enter
+// SearchBar.jsx - Versión mejorada
 import { useState } from "react";
 
-// Componente de búsqueda que puede buscar al escribir o al enviar formulario
 export default function SearchBar({ onSearch }) {
-    const [query, setQuery] = useState(""); // Estado del texto de búsqueda
+    const [query, setQuery] = useState("");
 
-    // Maneja el envío del formulario (Enter o clic en botón)
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (onSearch) onSearch(query.trim().toLowerCase()); // ✅ llamada segura
+        if (onSearch && query.trim()) {
+            onSearch(query.trim());
+        }
+    };
+
+    const handleChange = (e) => {
+        const value = e.target.value;
+        setQuery(value);
+        
+        // Búsqueda en tiempo real
+        if (onSearch) {
+            onSearch(value.trim());
+        }
+    };
+
+    const handleClear = () => {
+        setQuery("");
+        if (onSearch) {
+            onSearch(""); // Limpiar búsqueda
+        }
     };
 
     return (
-        <form className="d-flex" onSubmit={handleSubmit}>
-            <input
-                className="form-control me-2"
-                type="search"
-                placeholder="Buscar productos..."
-                value={query}
-                onChange={(e) => {
-                    setQuery(e.target.value); // Actualiza estado
-                    // Búsqueda en tiempo real mientras escribe
-                    if (onSearch) onSearch(e.target.value.trim().toLowerCase()); // ✅ protección
-                }}
-            />
-            <button className="btn btn-outline-light" type="submit">
-                🔍
-            </button>
+        <form className="d-flex align-items-center" onSubmit={handleSubmit}>
+            <div className="input-group">
+                <input
+                    className="form-control"
+                    type="search"
+                    placeholder="Buscar productos..."
+                    value={query}
+                    onChange={handleChange}
+                />
+                {/* Botón para limpiar búsqueda */}
+                {query && (
+                    <button 
+                        type="button" 
+                        className="btn btn-outline-secondary"
+                        onClick={handleClear}
+                    >
+                        ✕
+                    </button>
+                )}
+                <button className="btn btn-outline-light" type="submit">
+                    🔍
+                </button>
+            </div>
         </form>
     );
 }
