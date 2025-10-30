@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProductList from "../Components/common/ProductList";
+import { useCart } from "../Components/cart/CartContext";
 
 export default function Home({ products }) {
     const [featuredProducts, setFeaturedProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const { addToCart } = useCart();
 
     // Seleccionar productos destacados y categorías al cargar
     useEffect(() => {
         if (products.length > 0) {
-            // Tomar los primeros 6 productos como destacados
-            setFeaturedProducts(products.slice(0, 6));
+            // Tomar productos aleatorios para featured
+            const shuffled = [...products].sort(() => 0.5 - Math.random());
+            setFeaturedProducts(shuffled.slice(0, 6));
             
             // Obtener categorías únicas
             const uniqueCategories = [...new Set(products.map(p => p.categoria))].slice(0, 4);
@@ -43,9 +46,9 @@ export default function Home({ products }) {
                     <p className="section-subtitle">Los favoritos de nuestra comunidad gamer</p>
                     
                     {featuredProducts.length > 0 ? (
-                        <div className="products-grid">
+                        <div className="featured-products-grid">
                             {featuredProducts.map(product => (
-                                <div key={product.id} className="product-card">
+                                <div key={product.id} className="featured-product-card">
                                     <div className="product-image-container">
                                         <img 
                                             src={product.imagen} 
@@ -53,16 +56,17 @@ export default function Home({ products }) {
                                             className="product-img"
                                         />
                                         <div className="product-overlay">
-                                            <Link 
-                                                to={`/categoria/${product.categoria}`}
+                                            <button 
                                                 className="btn-overlay"
+                                                onClick={() => addToCart(product)}
                                             >
-                                                Ver Similar
-                                            </Link>
+                                                🛒 Agregar al Carrito
+                                            </button>
                                         </div>
                                     </div>
                                     <div className="product-info">
                                         <h3 className="product-title">{product.nombre}</h3>
+                                        <p className="product-category">{product.categoria}</p>
                                         <p className="product-description">
                                             {product.descripcion.length > 80 
                                                 ? `${product.descripcion.substring(0, 80)}...` 
@@ -73,7 +77,10 @@ export default function Home({ products }) {
                                             <span className="product-price">
                                                 ${product.precio.toLocaleString()}
                                             </span>
-                                            <button className="add-to-cart">
+                                            <button 
+                                                className="add-to-cart"
+                                                onClick={() => addToCart(product)}
+                                            >
                                                 🛒 Agregar
                                             </button>
                                         </div>
