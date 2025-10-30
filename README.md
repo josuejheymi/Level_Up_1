@@ -68,3 +68,130 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---------
+###1. Estructura general del proyecto
+
+Framework: React para el frontend.
+
+Ruteo: React Router (Routes y Route) para navegación entre páginas.
+
+Estado global: Se maneja con Context API (UserContext y CartContext).
+
+Componentes: Separados en carpetas Components, Pages y Data.
+
+Estilos: Bootstrap para diseño responsivo.
+
+
+
+---
+
+2. Contextos (User y Cart)
+
+Propósito: Compartir datos entre varios componentes sin pasar props manualmente.
+
+UserContext: Maneja información del usuario (login, logout, perfil).
+
+CartContext: Maneja el carrito de compras (añadir, remover, limpiar items).
+
+Clave:
+
+Los componentes hijos se reciben como children.
+
+useContext permite acceder al estado y funciones de forma sencilla.
+
+useEffect se usa para sincronizar el carrito con localStorage.
+
+
+
+
+---
+
+3. Componentes principales
+
+App.jsx:
+
+Es el contenedor principal.
+
+Envuelve todo en UserProvider y CartProvider.
+
+Contiene el Navbar y el Routes para las páginas.
+
+Pasa los productos a Home y AdminPanel mediante props.
+
+
+Navbar:
+
+Muestra links de navegación y el nombre “Level Up Gamer”.
+
+Puede consumir UserContext para mostrar login o perfil.
+
+
+Páginas (Pages):
+
+Home: Lista de productos.
+
+AdminPanel: Gestión de productos.
+
+Cart: Muestra productos añadidos.
+
+Login, Register, Profile: Manejo de usuario.
+
+
+
+
+---
+
+4. Funcionalidades importantes
+
+Productos: Se guardan en App usando useState.
+
+Carrito:
+
+Añadir, remover, limpiar.
+
+Persistente usando localStorage.
+
+
+Rutas protegidas: AdminRoute permite que solo admins accedan a ciertas páginas.
+
+Resposividad: Bootstrap asegura que el diseño se vea bien en distintos dispositivos.
+
+
+
+---
+
+5. Testeo
+
+Herramientas: Aunque la pauta dice Jasmine/Karma, tú usaste Jest.
+
+Pruebas principales:
+
+Renderizado de componentes (Navbar, Home, etc.).
+
+Funcionalidad de Contextos (CartProvider y UserProvider).
+
+Verificación de elementos en pantalla.
+
+
+Errores comunes:
+
+Navigate necesita <Router> envolviendo todo.
+
+Componentes importados incorrectamente pueden ser undefined.
+
+
+
+
+---
+
+6. Conceptos clave para explicar
+
+children: Elementos que pasan dentro de un componente contenedor.
+
+Context API: Manejo de estado global para no pasar props innecesariamente.
+
+Props y State: Props para pasar datos a hijos, State para cambios internos.
+
+useEffect: Para efectos secundarios, como sincronizar con localStorage.
+
+React Router: Navegación y protección de rutas.
