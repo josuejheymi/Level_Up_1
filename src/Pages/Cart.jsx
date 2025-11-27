@@ -1,60 +1,47 @@
+import React from "react";
 import { useCart } from "../Components/cart/CartContext";
 
 export default function Cart() {
-    // Obtiene los items del carrito y funciones del contexto
-    const { cartItems, removeFromCart, clearCart } = useCart();
+  const { cart } = useCart();
 
-    // Calcula el total sumando precio * cantidad de cada item
-    const total = cartItems.reduce(
-        (sum, item) => sum + item.precio * item.quantity,
-        0
-    );
+  // Validación de seguridad: Si no hay items, muestra mensaje
+  if (!cart?.items || cart.items.length === 0) {
+    return <div className="container mt-5"><h3>Tu carrito está vacío</h3></div>;
+  }
 
-    return (
-        <div className="container mt-4">
-            <h2>Tu carrito</h2>
+  return (
+    <div className="container mt-5">
+      <h2>Tu Carrito de Compras</h2>
+      <table className="table mt-4">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio Unitario</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* PROTECCIÓN: (cart.items || []).map */}
+          {(cart.items || []).map((item) => (
+            <tr key={item.id}>
+              {/* Usamos ?. por si acaso el producto viene null */}
+              <td>{item.producto?.nombre || "Producto desconocido"}</td>
+              <td>${item.precioUnitario?.toLocaleString()}</td>
+              <td>{item.cantidad}</td>
+              <td>${(item.precioUnitario * item.cantidad).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-            {/* Si el carrito está vacío */}
-            {cartItems.length === 0 ? (
-                <p>Tu carrito está vacío.</p>
-            ) : (
-                /* Si hay productos en el carrito */
-                <>
-                    {/* Lista de productos en el carrito */}
-                    <ul className="list-group">
-                        {cartItems.map((item) => (
-                            <li
-                                key={item.id}
-                                className="list-group-item d-flex justify-content-between align-items-center"
-                            >
-                                {/* Información del producto */}
-                                <div>
-                                    <h5>{item.nombre}</h5>
-                                    <p>Cantidad: {item.quantity}</p>
-                                    <p>Precio unitario: ${item.precio.toLocaleString()}</p>
-                                    <p>Subtotal: ${(item.precio * item.quantity).toLocaleString()}</p>
-                                </div>
-
-                                {/* Botón para eliminar producto */}
-                                <button
-                                    className="btn btn-danger"
-                                    onClick={() => removeFromCart(item.id)}
-                                >
-                                    Eliminar
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-
-                    {/* Resumen y acciones del carrito */}
-                    <div className="mt-3">
-                        <h4>Total: ${total.toLocaleString()}</h4>
-                        <button className="btn btn-secondary" onClick={clearCart}>
-                            Vaciar carrito
-                        </button>
-                    </div>
-                </>
-            )}
+      <div className="d-flex justify-content-end mt-4">
+        <div className="card p-3" style={{ width: "300px" }}>
+          <h4>Total a Pagar:</h4>
+          {/* Protección para cart.total */}
+          <h2 className="text-primary">${(cart.total || 0).toLocaleString()}</h2>
         </div>
-    );
+      </div>
+    </div>
+  );
 }

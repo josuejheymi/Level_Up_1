@@ -1,93 +1,93 @@
-// Importando lógica separada para pruebas y mantenimiento
-import "../forms/ProductForm.logic.js";
-import { useState } from "react";
+import React, { useState } from "react";
+import api from "../../config/api"; // Tu conexión a Axios
 
-// Componente formulario para agregar nuevos productos
-export default function ProductForm({ onAddProduct }) {
-    // Estados para cada campo del formulario
-    const [nombre, setNombre] = useState("");
-    const [categoria, setCategoria] = useState("");
-    const [precio, setPrecio] = useState("");
-    const [imagen, setImagen] = useState("");
-    const [descripcion, setDescripcion] = useState("");
+export default function ProductForm() {
+  // Estado inicial del formulario
+  const [formData, setFormData] = useState({
+    nombre: "",
+    descripcion: "",
+    precio: 0,
+    stock: 0,
+    categoria: "Consolas", // Valor por defecto válido en tu Backend
+    imagenUrl: "",
+  });
 
-    // Maneja el envío del formulario
-    const handleSubmit = (e) => {
-        e.preventDefault(); // Evita recarga de página
+  const [mensaje, setMensaje] = useState("");
 
-        // Usa la lógica externa para crear el producto
-        const newProduct = window.ProductFormLogic.createProduct(
-            nombre, categoria, precio, imagen, descripcion
-        );
+  // Maneja los cambios en los inputs
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
 
-        // Si el producto es válido, lo agrega y limpia el formulario
-        if (newProduct) {
-            onAddProduct(newProduct); // Callback al componente padre
-            // Limpia todos los campos usando la lógica externa
-            window.ProductFormLogic.resetForm(
-                setNombre, setCategoria, setPrecio, setImagen, setDescripcion
-            );
-        }
-    };
+  // ENVÍO DE DATOS AL BACKEND
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // POST /api/productos
+      // Spring Boot espera un JSON con los nombres exactos del objeto formData
+      await api.post("/productos", formData);
+      
+      setMensaje("✅ Producto creado con éxito en la Base de Datos");
+      
+      // Limpiar formulario
+      setFormData({
+        nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "Consolas", imagenUrl: ""
+      });
+    } catch (error) {
+      console.error("Error creando producto:", error);
+      setMensaje("❌ Error al crear producto. Revisa la consola.");
+    }
+  };
 
-    return (
-        <form onSubmit={handleSubmit}>
-            {/* Campo Nombre */}
-            <div>
-                <label>Nombre:</label>
-                <input 
-                    type="text" 
-                    value={nombre} 
-                    onChange={(e) => setNombre(e.target.value)} 
-                    required 
-                />
-            </div>
+  return (
+    <div className="card p-4 shadow-sm">
+      <h3 className="mb-4">Agregar Nuevo Producto</h3>
+      
+      {mensaje && <div className="alert alert-info">{mensaje}</div>}
 
-            {/* Campo Categoría */}
-            <div>
-                <label>Categoría:</label>
-                <input 
-                    type="text" 
-                    value={categoria} 
-                    onChange={(e) => setCategoria(e.target.value)} 
-                    required 
-                />
-            </div>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label className="form-label">Nombre del Producto</label>
+          <input type="text" className="form-control" name="nombre" value={formData.nombre} onChange={handleChange} required />
+        </div>
 
-            {/* Campo Precio */}
-            <div>
-                <label>Precio:</label>
-                <input 
-                    type="number" 
-                    value={precio} 
-                    onChange={(e) => setPrecio(e.target.value)} 
-                    required 
-                />
-            </div>
+        <div className="mb-3">
+          <label className="form-label">Descripción</label>
+          <textarea className="form-control" name="descripcion" value={formData.descripcion} onChange={handleChange} required />
+        </div>
 
-            {/* Campo Imagen (URL) */}
-            <div>
-                <label>Imagen (URL):</label>
-                <input 
-                    type="text" 
-                    value={imagen} 
-                    onChange={(e) => setImagen(e.target.value)} 
-                    required 
-                />
-            </div>
+        <div className="row">
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Precio</label>
+            <input type="number" className="form-control" name="precio" value={formData.precio} onChange={handleChange} required />
+          </div>
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Stock</label>
+            <input type="number" className="form-control" name="stock" value={formData.stock} onChange={handleChange} required />
+          </div>
+        </div>
 
-            {/* Campo Descripción */}
-            <div>
-                <label>Descripción:</label>
-                <textarea 
-                    value={descripcion} 
-                    onChange={(e) => setDescripcion(e.target.value)} 
-                    required
-                ></textarea>
-            </div>
+        <div className="mb-3">
+          <label className="form-label">Categoría</label>
+          {/* Este select asegura que enviemos una categoría que el Backend entienda */}
+          <select className="form-select" name="categoria" value={formData.categoria} onChange={handleChange}>
+            <option value="Consolas">Consolas</option>
+            <option value="Juegos">Juegos</option>
+            <option value="Accesorios">Accesorios</option>
+            <option value="PC Gamer">PC Gamer</option>
+            <option value="Sillas">Sillas</option>
+            <option value="Ropa">Ropa</option>
+          </select>
+        </div>
 
-            {/* Botón de envío */}
-            <button type="submit">Agregar Producto</button>
-        </form>
-    );
+        <div className="mb-3">
+          <label className="form-label">URL de Imagen</label>
+          <input type="text" className="form-control" name="imagenUrl" value={formData.imagenUrl} onChange={handleChange} placeholder="https://..." required />
+        </div>
+
+        <button type="submit" className="btn btn-primary w-100">Guardar en Base de Datos</button>
+      </form>
+    </div>
+  );
 }

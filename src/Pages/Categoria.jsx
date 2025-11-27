@@ -1,52 +1,49 @@
-import { useState } from "react";
+import React, { useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
 import ProductList from "../Components/common/ProductList";
+// 1. Importamos el hook del contexto
+import { useProducts } from "../Components/products/ProductContext";
 
-export default function Categoria({ products }) {
-    const [selectedCategory, setSelectedCategory] = useState("todos");
+export default function Categoria() {
+  const { nombre } = useParams(); // Ej: "consolas", "juegos"
+  // 2. Sacamos TODOS los productos del contexto
+  const { allProducts, loading } = useProducts();
 
-    // Obtener categorías únicas de los productos
-    const categories = ["todos", ...new Set(products.map(p => p.categoria))];
-
-    // Filtrar productos por categoría seleccionada
-    const filteredProducts = selectedCategory === "todos"
-        ? products
-        : products.filter(product => product.categoria === selectedCategory);
-
-    return (
-        <div className="container mt-4">
-            <h1>Productos por Categoría</h1>
-
-            {/* Submenú de categorías - estilo horizontal */}
-            <div className="mb-4">
-                <nav className="nav nav-pills justify-content-center">
-                    {categories.map(category => (
-                        <button
-                            key={category}
-                            className={`nav-link ${selectedCategory === category ? "active" : ""}`}
-                            onClick={() => setSelectedCategory(category)}
-                        >
-                            {category === "todos" ? "Todos los Productos" :
-                                category.charAt(0).toUpperCase() + category.slice(1)}
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
-            {/* Información de la categoría seleccionada */}
-            <div className="mb-3">
-                <h3>
-                    {selectedCategory === "todos"
-                        ? "Todos los productos"
-                        : `Categoría: ${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`
-                    }
-                    <span className="badge bg-secondary ms-2">
-                        {filteredProducts.length} productos
-                    </span>
-                </h3>
-            </div>
-
-            {/* Lista de productos filtrados */}
-            <ProductList products={filteredProducts} />
-        </div>
+  // 3. Filtramos dinámicamente
+  const productosFiltrados = useMemo(() => {
+    if (!allProducts) return [];
+    if (nombre === "todos") return allProducts;
+    return allProducts.filter(
+      (p) => p.categoria.toLowerCase() === nombre.toLowerCase()
     );
+  }, [nombre, allProducts]);
+
+  if (loading) {
+    return <div className="container mt-5 text-center">Cargando categoría...</div>;
+  }
+
+  return (
+    <div className="container mt-4">
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item"><Link to="/">Inicio</Link></li>
+          <li className="breadcrumb-item active" aria-current="page">
+            {nombre.charAt(0).toUpperCase() + nombre.slice(1)}
+          </li>
+        </ol>
+      </nav>
+
+      <h2 className="mb-4 text-uppercase fw-bold border-bottom pb-2">
+        {nombre === "todos" ? "Todas las Categorías" : `Categoría: ${nombre}`}
+      </h2>
+
+      {productosFiltrados.length > 0 ? (
+        <ProductList products={productosFiltrados} />
+      ) : (
+        <div className="alert alert-warning text-center">
+          No hay productos en esta categoría todavía.
+        </div>
+      )}
+    </div>
+  );
 }
