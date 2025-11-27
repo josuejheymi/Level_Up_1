@@ -1,85 +1,95 @@
-// Este archivo gestiona el contexto global de usuarios en la aplicación. 
+import { createContext, useState, useEffect, useContext } from "react";
+// Importamos la instancia de Axios configurada (base URL: http://localhost:8080/api)
+import api from "../../config/api"; 
 
-// Permite manejar el estado de usuario logueado y registrar nuevos usuarios.
-import { createContext, useContext, useState, useEffect } from "react";
-import { users as defaultUsers } from "../../Data/users";
+// 1. Creación del Contexto:
+// Esto crea un "almacén" de datos que estará disponible para toda la aplicación.
+export const UserContext = createContext();
 
-// Creamos el contexto para compartir estado de usuario en toda la app
-const UserContext = createContext();
-
-// Proveedor que envuelve la aplicación y maneja la lógica de usuarios
-export const UserProvider = ({ children }) => {
-    // Lista completa de usuarios registrados
-    const [users, setUsers] = useState(() => {
-        // Intenta cargar usuarios desde localStorage al iniciar
-        const savedUsers = localStorage.getItem("users");
-        return savedUsers ? JSON.parse(savedUsers) : defaultUsers;
-    });
-
-    // Usuario actualmente logueado (null si no hay sesión)
-    const [currentUser, setCurrentUser] = useState(() => {
-        // Intenta recuperar sesión activa desde localStorage
-        const savedUser = localStorage.getItem("currentUser");
-        return savedUser && savedUser !== "null" ? JSON.parse(savedUser) : null;
-    });
-
-    // Sincroniza la lista de usuarios con localStorage cuando cambia
-    useEffect(() => {
-        localStorage.setItem("users", JSON.stringify(users));
-    }, [users]);
-
-    // Sincroniza el usuario logueado con localStorage cuando cambia
-    useEffect(() => {
-        if (currentUser) {
-            localStorage.setItem("currentUser", JSON.stringify(currentUser));
-        } else {
-            localStorage.removeItem("currentUser"); // Limpia si cierra sesión
-        }
-    }, [currentUser]);
-
-    // Registrar nuevo usuario
-    const registerUser = (newUser) => {
-        // Agrega nuevo usuario con ID único y rol por defecto
-        setUsers((prev) => [...prev, { ...newUser, id: Date.now(), role: "client" }]);
-        // Automáticamente inicia sesión con el nuevo usuario
-        setCurrentUser({ ...newUser, id: Date.now(), role: "client" });
-    };
-
-    // Login de usuario existente
-    const loginUser = (email, password) => {
-        // Busca usuario que coincida con email y contraseña
-        const found = users.find(
-            (u) => u.email === email && u.password === password
-        );
-        if (found) {
-            setCurrentUser(found); // Establece como usuario actual
-            localStorage.setItem("currentUser", JSON.stringify(found)); // Guarda en localStorage
-            return found; // <-- DEVUELVE EL USUARIO COMPLETO (para redirección, etc.)
-        }
-        return null; // <-- si no encontró nada (credenciales incorrectas)
-    };
-
-    // Cerrar sesión del usuario actual
-    const logoutUser = () => {
-        setCurrentUser(null); // Elimina usuario actual
-        localStorage.removeItem("currentUser"); // Limpia localStorage
-    };
-
-    // Provee todos los valores y funciones a los componentes hijos
-    return (
-        <UserContext.Provider
-            value={{
-                users,           // Lista de todos los usuarios
-                currentUser,     // Usuario logueado actual (o null)
-                registerUser,    // Función para registrar nuevo usuario
-                loginUser,       // Función para iniciar sesión
-                logoutUser,      // Función para cerrar sesión
-            }}
-        >
-            {children}
-        </UserContext.Provider>
-    );
+// 2. Custom Hook "useUser":
+// Este es un patrón profesional para consumir el contexto.
+// Evita tener que importar 'useContext' y 'UserContext' en cada componente.
+// Si un componente intenta usarlo fuera del Provider, lanzará un error útil para debugging.
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error("useUser debe usarse dentro de un UserProvider");
+  }
+  return context;
 };
 
-// Hook personalizado para usar el contexto fácilmente
-export const useUser = () => useContext(UserContext);
+// 3. Provider (El Proveedor de Datos):
+// Este componente envolverá a toda tu App (en index.js o App.js) para dar acceso al usuario.
+export const UserProvider = ({ children }) => {
+  // Estado local para guardar el objeto usuario (id, nombre, email, rol, etc.)
+  const [user, setUser] = useState(null);
+
+  /**
+   * 📡 FUNCIÓN LOGIN
+   * Se comunica con el endpoint POST /api/usuarios/login de Spring Boot.
+   */
+  const login = async (email, password) => {
+    try {
+      // LLAMADA AL BACKEND: Enviamos el JSON { email, password }
+      const response = await api.post("/usuarios/login", { email, password });
+      
+      // Si Spring Boot responde 200 OK, 'response.data' contiene el objeto Usuario completo.
+      setUser(response.data);
+      
+      // PERSISTENCIA: Guardamos el usuario en el navegador para no perder la sesión al recargar.
+      localStorage.setItem("usuario", JSON.stringify(response.data));
+      
+      return { success: true };
+    } catch (error) {
+      // Manejo de errores (ej: 401 Unauthorized desde Java)
+      console.error("Error en login:", error);
+      return { success: false, message: "Credenciales incorrectas o error de conexión" };
+    }
+  };
+
+  /**
+   * 📡 FUNCIÓN REGISTER
+   * Se comunica con el endpoint POST /api/usuarios/registro de Spring Boot.
+   */
+  const register = async (datosUsuario) => {
+    try {
+        // LLAMADA AL BACKEND: Enviamos el objeto con nombre, email, password, etc.
+        // Spring Boot se encargará de validar la edad, el correo Duoc y crear el código de referido.
+        const response = await api.post("/usuarios/registro", datosUsuario);
+        
+        // Actualizamos el estado con el nuevo usuario creado
+        setUser(response.data);
+        localStorage.setItem("usuario", JSON.stringify(response.data));
+        
+        return { success: true };
+    } catch (error) {
+        // Capturamos el mensaje de error personalizado que enviamos desde Java (ej: "Debes ser mayor de 18")
+        // 'error.response.data' es el cuerpo del error que definimos en el Controller de Spring.
+        const mensajeError = error.response?.data?.error || "Error desconocido al registrar";
+        return { success: false, message: mensajeError };
+    }
+  };
+
+  // Función para cerrar sesión (Limpieza local)
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("usuario"); // Borramos la "sesión" del navegador
+  };
+
+  // EFECTO DE MONTAJE:
+  // Se ejecuta una sola vez al cargar la página.
+  // Verifica si ya había un usuario guardado en localStorage para restaurar la sesión automáticamente.
+  useEffect(() => {
+    const storedUser = localStorage.getItem("usuario");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  // Retornamos el Provider con todas las funciones y el estado expuestos
+  return (
+    <UserContext.Provider value={{ user, login, register, logout }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
