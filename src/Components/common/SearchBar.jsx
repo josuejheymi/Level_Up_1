@@ -1,54 +1,70 @@
-// SearchBar.jsx - Versión mejorada
 import { useState } from "react";
 
 export default function SearchBar({ onSearch }) {
     const [query, setQuery] = useState("");
 
+    // Maneja el envío con Enter o botón Lupa
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (onSearch && query.trim()) {
+        if (onSearch) {
             onSearch(query.trim());
         }
     };
 
+    // Búsqueda en tiempo real mientras escribes
     const handleChange = (e) => {
         const value = e.target.value;
         setQuery(value);
         
-        // Búsqueda en tiempo real
         if (onSearch) {
-            onSearch(value.trim());
+            onSearch(value); // Enviamos el valor tal cual para que filtre mientras escribes
         }
     };
 
+    // Limpiar búsqueda
     const handleClear = () => {
         setQuery("");
         if (onSearch) {
-            onSearch(""); // Limpiar búsqueda
+            onSearch(""); // Resetea el filtro global
         }
     };
 
     return (
-        <form className="d-flex align-items-center" onSubmit={handleSubmit}>
+        <form className="d-flex w-100" onSubmit={handleSubmit}>
             <div className="input-group">
                 <input
-                    className="form-control"
+                    className="form-control border-0"
                     type="search"
                     placeholder="Buscar productos..."
+                    aria-label="Buscar"
                     value={query}
                     onChange={handleChange}
+                    style={{ paddingRight: "40px" }} // Espacio para la X
                 />
-                {/* Botón para limpiar búsqueda */}
+                
+                {/* Botón X para limpiar (aparece solo si hay texto) */}
                 {query && (
                     <button 
                         type="button" 
-                        className="btn btn-outline-secondary"
+                        className="btn bg-white border-0 text-secondary"
+                        style={{ 
+                            position: "absolute", 
+                            right: "50px", 
+                            zIndex: 5,
+                            top: "50%",
+                            transform: "translateY(-50%)"
+                        }}
                         onClick={handleClear}
                     >
                         ✕
                     </button>
                 )}
-                <button className="btn btn-outline-light" type="submit">
+
+                <button 
+                    className="btn btn-primary" 
+                    type="submit"
+                    style={{ zIndex: 4 }}
+                >
                     🔍
                 </button>
             </div>

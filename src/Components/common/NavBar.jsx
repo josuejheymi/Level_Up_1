@@ -1,25 +1,48 @@
-import { Link, NavLink } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom"; // Importamos useNavigate y useLocation
 import CartWidget from "../cart/CartWidget";
 import { useUser } from "../user/UserContext";
 import UserDropdown from "../user/UserDropdown";
 import SearchBar from "./SearchBar";
-// IMPORTANTE: Conectamos con el contexto de productos
 import { useProducts } from "../products/ProductContext";
 
 export default function Navbar() {
-  const { currentUser } = useUser();
-  // Obtenemos la función para actualizar la búsqueda globalmente
+  const { user } = useUser();
   const { setSearchQuery } = useProducts();
+  const navigate = useNavigate(); // Hook para navegar
+  const location = useLocation(); // Hook para saber dónde estamos
+
+  // Función inteligente para manejar la búsqueda
+  const handleSearch = (query) => {
+    // 1. Actualizamos el filtro global
+    setSearchQuery(query);
+
+    // 2. Si no estamos en el Home, nos movemos al Home
+    if (location.pathname !== "/") {
+      navigate("/");
+    }
+
+    // 3. (UX PRO) Hacemos scroll suave hacia los resultados
+    // Esperamos un poquito (100ms) para asegurar que la página cambió
+    setTimeout(() => {
+      const productSection = document.querySelector(".all-products-section");
+      if (productSection) {
+        productSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
+  };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
       <div className="container">
-        {/* Marca o logo */}
-        <NavLink to="/" className="navbar-brand d-flex align-items-center">
-          <span className="fs-4 fw-bold text-uppercase">Level Up Gamer</span>
+        <NavLink 
+            to="/" 
+            className="navbar-brand d-flex align-items-center"
+            onClick={() => setSearchQuery("")} // Al hacer click en el logo, reseteamos la búsqueda
+        >
+          <span className="fs-4 fw-bold text-uppercase text-primary">Level Up</span>
+          <span className="fs-4 fw-bold text-uppercase text-light ms-2">Gamer</span>
         </NavLink>
 
-        {/* Botón hamburguesa */}
         <button
           className="navbar-toggler"
           type="button"
@@ -29,59 +52,54 @@ export default function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* Barra de búsqueda Conectada */}
-        {/* Pasamos setSearchQuery directamente al SearchBar */}
+        {/* BARRA DE BÚSQUEDA CENTRAL */}
+        {/* Pasamos nuestra nueva función handleSearch en lugar de setSearchQuery directo */}
         <div className="d-none d-lg-block mx-auto" style={{ width: "40%" }}>
-            <SearchBar onSearch={setSearchQuery} />
+            <SearchBar onSearch={handleSearch} />
         </div>
 
-        {/* Sección colapsable */}
         <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-lg-none">
-             {/* SearchBar para móvil */}
-             <li className="nav-item mb-2">
-                <SearchBar onSearch={setSearchQuery} />
-             </li>
-          </ul>
+          {/* SearchBar móvil */}
+          <div className="d-lg-none my-3">
+             <SearchBar onSearch={handleSearch} />
+          </div>
 
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
-              <NavLink to="/" className="nav-link">Inicio</NavLink>
+              <NavLink to="/" className="nav-link" onClick={() => setSearchQuery("")}>Inicio</NavLink>
             </li>
             <li className="nav-item">
               <NavLink to="/categoria/todos" className="nav-link">Categorías</NavLink>
             </li>
             <li className="nav-item">
-              <NavLink to="/about" className="nav-link">Acerca de</NavLink>
+              <NavLink to="/about" className="nav-link">Nosotros</NavLink>
             </li>
           </ul>
 
-          {/* Opciones de usuario */}
-          <ul className="navbar-nav ms-auto align-items-center">
-            {currentUser ? (
+          <ul className="navbar-nav ms-auto align-items-center gap-3">
+            {user ? (
               <li className="nav-item">
                 <UserDropdown />
               </li>
             ) : (
               <>
                 <li className="nav-item">
-                  <NavLink to="/login" className="nav-link">Login</NavLink>
+                  <NavLink to="/login" className="nav-link fw-semibold">Login</NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/register" className="nav-link btn btn-outline-light btn-sm ms-2 px-3 rounded-pill">
-                    Register
+                  <NavLink to="/register" className="btn btn-primary btn-sm px-4 rounded-pill fw-bold">
+                    Registro
                   </NavLink>
                 </li>
               </>
             )}
+            
+            <li className="nav-item">
+              <NavLink to="/cart" className="nav-link text-light position-relative p-0">
+                <CartWidget />
+              </NavLink>
+            </li>
           </ul>
-        </div>
-
-        {/* Carrito siempre visible */}
-        <div className="d-flex align-items-center ms-3">
-          <Link to="/cart" className="nav-link text-light position-relative">
-            <CartWidget />
-          </Link>
         </div>
       </div>
     </nav>

@@ -50,7 +50,16 @@ export const ProductProvider = ({ children }) => {
       return { success: false, error };
     }
   };
-
+  // 4. Eliminar producto (Para el Admin)
+  const deleteProduct = async (id) => {
+    try {
+      await productService.delete(id);
+      await refreshProducts(); // Recarga la lista tras borrar
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
+  };
   return (
     <ProductContext.Provider value={{ 
       products: filteredProducts, // Exportamos YA filtrados
@@ -58,6 +67,7 @@ export const ProductProvider = ({ children }) => {
       searchQuery, 
       setSearchQuery, 
       addProduct,
+      deleteProduct, 
       loading 
     }}>
       {children}

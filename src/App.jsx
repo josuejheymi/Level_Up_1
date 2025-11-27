@@ -10,6 +10,7 @@ import Register from "./Pages/Register";
 import Profile from "./Pages/Profile";
 import AdminRoute from "./Components/common/AdminRoute";
 import Categoria from "./Pages/Categoria";
+import ProductDetail from "./Pages/ProductDetail";
 
 export default function App() {
   return (
@@ -31,7 +32,7 @@ export default function App() {
               </AdminRoute>
             }
           />
-          
+          <Route path="/producto/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

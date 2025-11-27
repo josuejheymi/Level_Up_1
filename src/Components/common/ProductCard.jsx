@@ -1,33 +1,75 @@
+import React from "react";
+import { Link } from "react-router-dom"; // Importamos Link para navegación
 import { useCart } from "../cart/CartContext";
 
 export default function ProductCard({ product }) {
     const { addToCart } = useCart();
 
-    return (
-        <div className="card h-100">
-            {/* CAMBIO IMPORTANTE: product.imagenUrl */}
-            <img
-                src={product.imagenUrl} 
-                className="card-img-top"
-                alt={product.nombre}
-                style={{ objectFit: "contain", height: "200px" }} // Un tip de estilo extra
-            />
+    // Verificamos si hay stock
+    const sinStock = product.stock === 0;
 
-            <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{product.nombre}</h5>
-                <p className="card-text flex-grow-1">{product.descripcion}</p>
+    return (
+        <div className="card h-100 shadow-sm border-0 position-relative hover-lift">
+            
+            {/* 1. Imagen Clickeable con Badge AGOTADO */}
+            <div className="position-relative overflow-hidden">
+                <Link to={`/producto/${product.id}`}>
+                    <img
+                        src={product.imagenUrl}
+                        className="card-img-top p-3"
+                        alt={product.nombre}
+                        style={{ 
+                            height: "200px", 
+                            objectFit: "contain",
+                            // Opacidad si no hay stock
+                            opacity: sinStock ? 0.5 : 1,
+                            transition: "transform 0.3s ease"
+                        }}
+                    />
+                </Link>
+                
+                {/* Badge Visual de Agotado */}
+                {sinStock && (
+                    <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-light bg-opacity-50">
+                        <span className="badge bg-secondary fs-5 shadow text-uppercase">Agotado</span>
+                    </div>
+                )}
+            </div>
+
+            <div className="card-body d-flex flex-column text-center">
+                {/* Título Clickeable */}
+                <Link to={`/producto/${product.id}`} className="text-decoration-none text-dark">
+                    <h5 className="card-title fw-bold text-truncate mb-1">{product.nombre}</h5>
+                </Link>
+                
+                <p className="text-muted small mb-3 text-uppercase fw-semibold" style={{fontSize: "0.75rem"}}>
+                    {product.categoria}
+                </p>
+                
+                {/* Precio */}
+                <div className="mb-3">
+                    <span className={`fs-4 fw-bold ${sinStock ? 'text-muted text-decoration-line-through' : 'text-primary'}`}>
+                        ${product.precio?.toLocaleString()}
+                    </span>
+                </div>
 
                 <div className="mt-auto">
-                    <p className="card-text">
-                        <strong>Precio:</strong> ${product.precio?.toLocaleString()}
-                    </p>
-
+                    {/* 2. BOTÓN CONDICIONAL */}
                     <button
-                        className="btn btn-primary w-100"
+                        className={`btn w-100 fw-bold rounded-pill shadow-sm transition-all ${sinStock ? 'btn-secondary' : 'btn-primary'}`}
                         onClick={() => addToCart(product)}
+                        disabled={sinStock} // Bloquea el click nativo
+                        style={{ cursor: sinStock ? "not-allowed" : "pointer" }}
                     >
-                        Agregar al Carrito
+                        {sinStock ? "Sin Stock" : "Agregar al Carrito"}
                     </button>
+                    
+                    {/* Mensaje de "Quedan pocos" */}
+                    {!sinStock && product.stock > 0 && product.stock < 5 && (
+                        <small className="text-danger d-block mt-2 fw-bold animate-pulse">
+                            ¡Solo quedan {product.stock}!
+                        </small>
+                    )}
                 </div>
             </div>
         </div>
