@@ -1,76 +1,91 @@
 import React, { useState } from "react";
-import api from "../../config/api"; // Tu conexión a Axios
+import { useProducts } from "../products/ProductContext"; 
 
-export default function ProductForm() {
-  // Estado inicial del formulario
+// 1. Recibimos la prop 'onSuccess' (función para cerrar el formulario)
+export default function ProductForm({ onSuccess }) {
+  const { addProduct } = useProducts();
+
   const [formData, setFormData] = useState({
     nombre: "",
     descripcion: "",
     precio: 0,
     stock: 0,
-    categoria: "Consolas", // Valor por defecto válido en tu Backend
+    categoria: "Consolas",
     imagenUrl: "",
   });
 
   const [mensaje, setMensaje] = useState("");
 
-  // Maneja los cambios en los inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // ENVÍO DE DATOS AL BACKEND
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      // POST /api/productos
-      // Spring Boot espera un JSON con los nombres exactos del objeto formData
-      await api.post("/productos", formData);
-      
-      setMensaje("✅ Producto creado con éxito en la Base de Datos");
+    setMensaje(""); 
+
+    const resultado = await addProduct(formData);
+
+    if (resultado.success) {
+      setMensaje("✅ Producto creado exitosamente");
       
       // Limpiar formulario
       setFormData({
         nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "Consolas", imagenUrl: ""
       });
-    } catch (error) {
-      console.error("Error creando producto:", error);
-      setMensaje("❌ Error al crear producto. Revisa la consola.");
+
+      // 2. MAGIA UX: Si nos pasaron la función onSuccess, la ejecutamos tras 1.5 seg
+      // Esto permite que el usuario lea el mensaje "✅" antes de que se cierre el formulario.
+      if (onSuccess) {
+        setTimeout(() => {
+            onSuccess(); 
+        }, 1500);
+      }
+
+    } else {
+      console.error("Error:", resultado.error);
+      setMensaje("❌ Error al crear producto");
     }
   };
 
   return (
-    <div className="card p-4 shadow-sm">
-      <h3 className="mb-4">Agregar Nuevo Producto</h3>
+    <div className="card p-4 border-0"> {/* Le quité la sombra aquí para que no choque con la del contenedor padre */}
+      <h4 className="mb-4 fw-bold text-primary">Agregar Nuevo Producto</h4>
       
-      {mensaje && <div className="alert alert-info">{mensaje}</div>}
+      {mensaje && (
+        <div className={`alert ${mensaje.includes("✅") ? "alert-success" : "alert-danger"}`}>
+          {mensaje}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label className="form-label">Nombre del Producto</label>
+          <label className="form-label fw-semibold">Nombre del Producto</label>
           <input type="text" className="form-control" name="nombre" value={formData.nombre} onChange={handleChange} required />
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Descripción</label>
-          <textarea className="form-control" name="descripcion" value={formData.descripcion} onChange={handleChange} required />
+          <label className="form-label fw-semibold">Descripción</label>
+          <textarea className="form-control" name="descripcion" value={formData.descripcion} onChange={handleChange} required rows="3" />
         </div>
 
         <div className="row">
           <div className="col-md-6 mb-3">
-            <label className="form-label">Precio</label>
-            <input type="number" className="form-control" name="precio" value={formData.precio} onChange={handleChange} required />
+            <label className="form-label fw-semibold">Precio</label>
+            <div className="input-group">
+                <span className="input-group-text">$</span>
+                <input type="number" className="form-control" name="precio" value={formData.precio} onChange={handleChange} required min="0" />
+            </div>
           </div>
           <div className="col-md-6 mb-3">
-            <label className="form-label">Stock</label>
-            <input type="number" className="form-control" name="stock" value={formData.stock} onChange={handleChange} required />
+            <label className="form-label fw-semibold">Stock</label>
+            <input type="number" className="form-control" name="stock" value={formData.stock} onChange={handleChange} required min="0" />
           </div>
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Categoría</label>
-          {/* Este select asegura que enviemos una categoría que el Backend entienda */}
+          <label className="form-label fw-semibold">Categoría</label>
           <select className="form-select" name="categoria" value={formData.categoria} onChange={handleChange}>
             <option value="Consolas">Consolas</option>
             <option value="Juegos">Juegos</option>
@@ -82,11 +97,19 @@ export default function ProductForm() {
         </div>
 
         <div className="mb-3">
-          <label className="form-label">URL de Imagen</label>
+          <label className="form-label fw-semibold">URL de Imagen</label>
           <input type="text" className="form-control" name="imagenUrl" value={formData.imagenUrl} onChange={handleChange} placeholder="https://..." required />
+          {formData.imagenUrl && (
+              <div className="mt-2 text-center">
+                  <small className="text-muted">Vista previa:</small><br/>
+                  <img src={formData.imagenUrl} alt="Vista previa" style={{height: '80px', objectFit: 'contain'}} onError={(e) => e.target.style.display = 'none'} />
+              </div>
+          )}
         </div>
 
-        <button type="submit" className="btn btn-primary w-100">Guardar en Base de Datos</button>
+        <button type="submit" className="btn btn-primary w-100 fw-bold py-2">
+            Guardar Producto
+        </button>
       </form>
     </div>
   );

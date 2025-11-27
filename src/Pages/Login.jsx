@@ -1,71 +1,87 @@
-import { useState } from "react";
-import { useUser } from "../Components/user/UserContext";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+// Importamos el hook que arreglamos ayer
+import { useUser } from "../Components/user/UserContext"; 
 
 export default function Login() {
-    // Obtiene la función de login del contexto de usuario
-    const { loginUser } = useUser();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const navigate = useNavigate();
+  
+  // Extraemos la función login del contexto
+  const { login } = useUser();
 
-    // Hook para redireccionar después del login
-    const navigate = useNavigate();
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    // Estados para los campos del formulario
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState(""); // Estado para mensajes de error
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    // Maneja el envío del formulario
-    const handleSubmit = (e) => {
-        e.preventDefault(); // Evita recarga de página
+    // 1. Llamamos a la función del Contexto (que llama al Backend)
+    const resultado = await login(formData.email, formData.password);
 
-        // Intenta hacer login con las credenciales
-        const user = loginUser(email, password);
+    setLoading(false);
 
-        // Si el login es exitoso
-        if (user) {
-            console.log("Usuario logueado:", user);
+    if (resultado.success) {
+      // 2. Si es exitoso, redirigimos al Home o Admin
+      navigate("/");
+    } else {
+      // 3. Si falla, mostramos el mensaje que viene del Backend (o Contexto)
+      setError(resultado.message || "Error al iniciar sesión");
+    }
+  };
 
-            // Redirige según el rol del usuario
-            if (user.role === "admin") {
-                navigate("/admin"); // Panel de administración
-            } else {
-                navigate("/"); // Página principal para clientes
-            }
-        } else {
-            // Si las credenciales son incorrectas
-            setError("Email o contraseña incorrectos");
-        }
-    };
+  return (
+    <div className="container d-flex justify-content-center align-items-center vh-100">
+      <div className="card p-4 shadow-lg" style={{ width: "100%", maxWidth: "400px" }}>
+        <h2 className="text-center mb-4 fw-bold">Iniciar Sesión</h2>
+        
+        {error && <div className="alert alert-danger text-center">{error}</div>}
 
-    return (
-        <div className="container mt-4">
-            <h2>Login</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">Correo Electrónico</label>
+            <input
+              type="email"
+              className="form-control"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="ejemplo@duoc.cl"
+            />
+          </div>
 
-            {/* Formulario de login */}
-            <form onSubmit={handleSubmit}>
-                {/* Campo de email */}
-                <input
-                    className="form-control mb-2"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+          <div className="mb-3">
+            <label className="form-label">Contraseña</label>
+            <input
+              type="password"
+              className="form-control"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-                {/* Campo de contraseña (oculta) */}
-                <input
-                    className="form-control mb-2"
-                    placeholder="Contraseña"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+          <button 
+            type="submit" 
+            className="btn btn-primary w-100 py-2 fw-bold"
+            disabled={loading}
+          >
+            {loading ? "Cargando..." : "Ingresar"}
+          </button>
+        </form>
 
-                {/* Muestra error si existe */}
-                {error && <p className="text-danger">{error}</p>}
-
-                {/* Botón de envío */}
-                <button className="btn btn-primary w-100 mb-2">Ingresar</button>
-            </form>
+        <div className="text-center mt-3">
+          <small>¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link></small>
         </div>
-    );
-};
+      </div>
+    </div>
+  );
+}

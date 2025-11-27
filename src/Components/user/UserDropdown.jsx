@@ -1,55 +1,74 @@
-// Componente de dropdown de usuario que muestra opciones de perfil y cerrar sesión
-
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "./UserContext";
 
 export default function UserDropdown() {
-  // Obtiene el usuario actual y función para cerrar sesión del contexto
-  const { currentUser, logoutUser } = useUser();
-
-  // Estado para controlar si el dropdown está abierto o cerrado
+  // 1. Usamos los nombres correctos del nuevo UserContext
+  const { user, logout } = useUser();
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Si no hay usuario logueado, no muestra nada
-  if (!currentUser) return null;
+  // Si no hay usuario, no mostramos nada
+  if (!user) return null;
+
+  const handleLogout = () => {
+    logout();
+    setOpen(false);
+    navigate("/"); // Redirigir al home al salir
+  };
 
   return (
-    // Contenedor del dropdown que se cierra cuando el mouse sale
-    <div className="dropdown" onMouseLeave={() => setOpen(false)}>
-
-      {/* Botón que muestra el nombre del usuario y abre/cierra el menú */}
+    <div className="dropdown position-relative" onMouseLeave={() => setOpen(false)}>
+      
+      {/* Botón con el nombre del usuario (user.nombre viene de Java) */}
       <button
-        className="btn btn-secondary dropdown-toggle"
-        onClick={() => setOpen(!open)} // Alterna entre abrir y cerrar
+        className="btn btn-secondary dropdown-toggle d-flex align-items-center gap-2"
+        type="button"
+        onClick={() => setOpen(!open)}
       >
-        {currentUser.name} {/* Muestra el nombre del usuario */}
+        <i className="bi bi-person-circle"></i> {/* Icono opcional si usas Bootstrap Icons */}
+        {user.nombre}
       </button>
 
-      {/* Menú desplegable que solo se muestra cuando open es true */}
+      {/* Menú Desplegable */}
       {open && (
-        <ul className="dropdown-menu show">
-          {/* Opción para ir al perfil del usuario */}
+        <ul 
+          className="dropdown-menu show" 
+          style={{ position: "absolute", right: 0, left: "auto", minWidth: "200px" }}
+        >
+          {/* Header con el correo */}
+          <li className="dropdown-header text-truncate">
+            {user.email}
+            {user.esEstudianteDuoc && <span className="badge bg-success ms-2">Duoc VIP</span>}
+          </li>
+          
+          <li><hr className="dropdown-divider" /></li>
+
+          {/* Opción ADMIN (Solo si el rol es ADMIN) */}
+          {user.rol === "ADMIN" && (
+            <li>
+              <Link className="dropdown-item fw-bold text-primary" to="/admin" onClick={() => setOpen(false)}>
+                ⚙️ Panel Admin
+              </Link>
+            </li>
+          )}
+
+          {/* Opción Perfil */}
           <li>
-            <Link
-              className="dropdown-item"
-              to="/profile"
-              onClick={() => setOpen(false)} // Cierra el menú al hacer clic
-            >
-              Mi Perfil
+            <Link className="dropdown-item" to="/profile" onClick={() => setOpen(false)}>
+              👤 Mi Perfil
             </Link>
           </li>
 
-          {/* Opción para cerrar sesión */}
+          <li><hr className="dropdown-divider" /></li>
+
+          {/* Opción Cerrar Sesión */}
           <li>
             <button
-              className="dropdown-item"
-              onClick={() => {
-                logoutUser(); // Cierra la sesión
-                setOpen(false); // Cierra el menú
-              }}
+              className="dropdown-item text-danger"
+              onClick={handleLogout}
             >
-              Cerrar sesión
+              🚪 Cerrar sesión
             </button>
           </li>
         </ul>

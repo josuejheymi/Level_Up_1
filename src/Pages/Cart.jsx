@@ -1,45 +1,192 @@
-import React from "react";
+import React, { useState } from "react";
 import { useCart } from "../Components/cart/CartContext";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Cart() {
-  const { cart } = useCart();
+  // 1. Obtenemos datos y funciones del Contexto
+  const { cart, removeFromCart, updateQuantity, checkout } = useCart();
+  
+  // 2. Hooks para navegación y estado de carga
+  const navigate = useNavigate();
+  const [procesando, setProcesando] = useState(false);
 
-  // Validación de seguridad: Si no hay items, muestra mensaje
+  // 3. Validación de Carrito Vacío
   if (!cart?.items || cart.items.length === 0) {
-    return <div className="container mt-5"><h3>Tu carrito está vacío</h3></div>;
+    return (
+      <div className="container mt-5 text-center fade-in">
+        <div style={{ fontSize: "4rem" }}>🛒</div>
+        <h3 className="mt-3">Tu carrito está vacío</h3>
+        <p className="text-muted">¡Agrega algunos productos para comenzar!</p>
+        <Link to="/" className="btn btn-primary mt-3 px-4 rounded-pill fw-bold">
+          Ir a la Tienda
+        </Link>
+      </div>
+    );
   }
 
-  return (
-    <div className="container mt-5">
-      <h2>Tu Carrito de Compras</h2>
-      <table className="table mt-4">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Precio Unitario</th>
-            <th>Cantidad</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* PROTECCIÓN: (cart.items || []).map */}
-          {(cart.items || []).map((item) => (
-            <tr key={item.id}>
-              {/* Usamos ?. por si acaso el producto viene null */}
-              <td>{item.producto?.nombre || "Producto desconocido"}</td>
-              <td>${item.precioUnitario?.toLocaleString()}</td>
-              <td>{item.cantidad}</td>
-              <td>${(item.precioUnitario * item.cantidad).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  // 4. Calcular Subtotal Real (Matemático) para compararlo con el total del Backend
+  // Esto nos permite saber si hubo descuento
+  const subtotalReal = (cart.items || []).reduce((acc, item) => {
+    return acc + (item.precioUnitario * item.cantidad);
+  }, 0);
 
-      <div className="d-flex justify-content-end mt-4">
-        <div className="card p-3" style={{ width: "300px" }}>
-          <h4>Total a Pagar:</h4>
-          {/* Protección para cart.total */}
-          <h2 className="text-primary">${(cart.total || 0).toLocaleString()}</h2>
+  // 5. Detectar Descuento
+  const hayDescuento = (cart.total || 0) < subtotalReal;
+  const montoDescuento = subtotalReal - (cart.total || 0);
+
+  // 6. MANEJADOR DE COMPRA (CHECKOUT)
+  const handleCompra = async () => {
+    setProcesando(true); // Bloquear botón
+    
+    // Llamamos al Backend para generar la orden y descontar stock
+    const resultado = await checkout();
+    
+    setProcesando(false); // Desbloquear
+
+    if (resultado.success) {
+      alert(`✅ ¡Compra exitosa!\nOrden #${resultado.orden.id} generada correctamente.`);
+      navigate("/"); // Redirigir al Home
+    } else {
+      alert(`❌ Error al procesar la compra:\n${resultado.message}`);
+    }
+  };
+
+  return (
+    <div className="container mt-5 mb-5 fade-in">
+      <h2 className="mb-4 fw-bold">Tu Carrito de Compras</h2>
+      
+      <div className="row">
+        {/* === TABLA DE PRODUCTOS (Izquierda) === */}
+        <div className="col-lg-8">
+          <div className="table-responsive shadow-sm rounded border">
+            <table className="table table-hover align-middle mb-0 bg-white">
+              <thead className="table-light">
+                <tr>
+                  <th scope="col" className="ps-4">Producto</th>
+                  <th scope="col">Precio</th>
+                  <th scope="col" className="text-center">Cantidad</th>
+                  <th scope="col" className="text-end">Subtotal</th>
+                  <th scope="col" className="text-center pe-4"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(cart.items || []).map((item) => (
+                  <tr key={item.id}>
+                    {/* Nombre y Categoría */}
+                    <td className="ps-4">
+                        <div className="fw-bold text-dark">
+                            {item.producto?.nombre || "Producto desconocido"}
+                        </div>
+                        <small className="text-muted text-uppercase" style={{ fontSize: "0.75rem" }}>
+                            {item.producto?.categoria}
+                        </small>
+                    </td>
+                    
+                    {/* Precio Unitario */}
+                    <td>${item.precioUnitario?.toLocaleString()}</td>
+                    
+                    {/* Controles de Cantidad */}
+                    <td className="text-center">
+                        <div className="btn-group btn-group-sm border rounded" role="group">
+                            <button 
+                                className="btn btn-light text-secondary"
+                                onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
+                                disabled={item.cantidad <= 1} // Evitar bajar de 1 (usar basura para borrar)
+                            >
+                                -
+                            </button>
+                            <span className="btn btn-light disabled text-dark fw-bold" style={{ width: "40px", backgroundColor: "#fff" }}>
+                                {item.cantidad}
+                            </span>
+                            <button 
+                                className="btn btn-light text-secondary"
+                                onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
+                            >
+                                +
+                            </button>
+                        </div>
+                    </td>
+
+                    {/* Subtotal por Item */}
+                    <td className="text-end fw-bold">
+                      ${(item.precioUnitario * item.cantidad).toLocaleString()}
+                    </td>
+
+                    {/* Botón Eliminar */}
+                    <td className="text-center pe-4">
+                        <button 
+                            className="btn btn-outline-danger btn-sm border-0 rounded-circle"
+                            onClick={() => removeFromCart(item.producto.id)}
+                            title="Eliminar del carrito"
+                        >
+                            <i className="bi bi-trash"></i> 
+                        </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* === RESUMEN DE PAGO (Derecha) === */}
+        <div className="col-lg-4 mt-4 mt-lg-0">
+          <div className="card border-0 shadow-sm bg-light p-4 sticky-top" style={{ top: "100px", zIndex: 1 }}>
+            <h4 className="mb-3 fw-bold">Resumen del Pedido</h4>
+            
+            {/* Subtotal */}
+            <div className="d-flex justify-content-between mb-2">
+              <span className="text-muted">Subtotal</span>
+              <span className="fw-bold">${subtotalReal.toLocaleString()}</span>
+            </div>
+
+            {/* Descuento Visual */}
+            {hayDescuento ? (
+              <div className="d-flex justify-content-between mb-3 text-success">
+                <span>
+                  <i className="bi bi-tag-fill me-1"></i> 
+                  Descuento Duoc (20%)
+                </span>
+                <span className="fw-bold">
+                  - ${montoDescuento.toLocaleString()}
+                </span>
+              </div>
+            ) : (
+              <div className="mb-3"></div> // Espacio vacío si no hay descuento
+            )}
+
+            <hr className="my-2" />
+
+            {/* Total Final */}
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
+              <span className="h5 mb-0">Total a Pagar</span>
+              <span className="h3 mb-0 text-primary fw-bold">
+                ${(cart.total || 0).toLocaleString()}
+              </span>
+            </div>
+
+            {/* Botón de Pago */}
+            <button 
+                className="btn btn-success w-100 py-3 fw-bold shadow-sm rounded-pill transition-transform hover-scale"
+                onClick={handleCompra}
+                disabled={procesando}
+            >
+              {procesando ? (
+                <span>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Procesando...
+                </span>
+              ) : (
+                "🔒 Pagar Ahora"
+              )}
+            </button>
+            
+            <div className="text-center mt-3">
+                <small className="text-muted">
+                    <i className="bi bi-shield-lock"></i> Compra 100% Segura
+                </small>
+            </div>
+          </div>
         </div>
       </div>
     </div>

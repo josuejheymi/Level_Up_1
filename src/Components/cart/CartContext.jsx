@@ -15,13 +15,11 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const { user } = useUser();
   
-  // 1. ESTADO INICIAL SEGURO: Siempre tiene items como array vacío
+  // 1. ESTADO INICIAL
   const [cart, setCart] = useState({ items: [], total: 0 });
 
-  // 2. USO DE USECALLBACK:
-  // Esto arregla el warning del useEffect. Memoriza la función para que no cambie en cada render.
+  // 2. REFRESH CART
   const refreshCart = useCallback(async () => {
-    // Si no hay usuario logueado o no tiene ID, limpiamos el carrito y salimos
     if (!user?.id) {
       setCart({ items: [], total: 0 });
       return;
@@ -31,7 +29,6 @@ export const CartProvider = ({ children }) => {
       const response = await api.get(`/carrito/${user.id}`);
       const data = response.data;
       
-      // BLINDAJE: Si el backend devuelve null o undefined, forzamos un array vacío
       setCart({
         ...data,
         items: Array.isArray(data?.items) ? data.items : [], 
@@ -39,21 +36,28 @@ export const CartProvider = ({ children }) => {
       });
     } catch (error) {
       console.error("Error cargando carrito:", error);
-      // En caso de error, volvemos al estado seguro
       setCart({ items: [], total: 0 });
     }
-  }, [user]); // Solo se recrea si cambia el usuario
+  }, [user]);
 
-  // 3. EFECTO CONTROLADO
-  // Ahora es seguro poner refreshCart en las dependencias
+  // 3. EFECTO
   useEffect(() => {
     refreshCart();
   }, [refreshCart]);
 
-  // 4. FUNCIÓN ADD TO CART
+  // 4. ADD TO CART
   const addToCart = async (product, cantidad = 1) => {
     if (!user) {
       alert("Por favor, inicia sesión para comprar.");
+      return;
+    }
+
+    // Validación local de stock
+    const itemEnCarrito = cart.items.find(item => item.producto.id === product.id);
+    const cantidadActual = itemEnCarrito ? itemEnCarrito.cantidad : 0;
+
+    if (cantidadActual + cantidad > product.stock) {
+      alert(`⚠️ No puedes agregar más. Stock disponible: ${product.stock}`);
       return;
     }
 
@@ -67,7 +71,6 @@ export const CartProvider = ({ children }) => {
       const response = await api.post("/carrito/agregar", payload);
       const data = response.data;
 
-      // BLINDAJE AL ACTUALIZAR
       setCart({
         ...data,
         items: Array.isArray(data?.items) ? data.items : [],
@@ -81,18 +84,89 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // 5. CÁLCULO DE TOTAL ITEMS (EL ERROR ESTABA AQUÍ)
-  // Creamos una variable auxiliar segura antes de hacer el reduce
+  // 5. REMOVE FROM CART
+  const removeFromCart = async (productId) => {
+    if (!user?.id) return;
+    try {
+      const response = await api.delete(`/carrito/${user.id}/producto/${productId}`);
+      const data = response.data;
+
+      setCart({
+        ...data,
+        items: Array.isArray(data?.items) ? data.items : [],
+        total: data?.total || 0
+      });
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+    }
+  };
+
+  // 6. UPDATE QUANTITY
+  const updateQuantity = async (productId, newQuantity) => {
+    if (!user?.id) return;
+    try {
+      const response = await api.put(`/carrito/${user.id}/producto/${productId}`, null, {
+        params: { cantidad: newQuantity }
+      });
+      const data = response.data;
+
+      setCart({
+        ...data,
+        items: Array.isArray(data?.items) ? data.items : [],
+        total: data?.total || 0
+      });
+    } catch (error) {
+      console.error("Error al actualizar cantidad:", error);
+      alert(error.response?.data?.error || "No se pudo actualizar la cantidad");
+    }
+  };
+
+  // 7. FUNCIÓN CHECKOUT (FINALIZAR COMPRA)
+  const checkout = async () => {
+    if (!user?.id) return { success: false, message: "Usuario no identificado" };
+
+    try {
+      const response = await api.post("/ordenes/checkout", { usuarioId: user.id });
+      setCart({ items: [], total: 0 });
+      return { success: true, orden: response.data };
+    } catch (error) {
+      console.error("Error en checkout:", error);
+      
+      // --- MAGIA PARA LEER EL ERROR REAL ---
+      let msg = "Error al procesar la compra";
+      
+      if (error.response) {
+          // Si el backend mandó un mensaje de texto plano
+          if (typeof error.response.data === 'string') {
+              msg = error.response.data;
+          } 
+          // Si mandó un objeto JSON (ej: { error: "Stock insuficiente" })
+          else if (typeof error.response.data === 'object') {
+              msg = error.response.data.error || error.response.data.message || JSON.stringify(error.response.data);
+          }
+      }
+      
+      return { success: false, message: msg };
+    }
+  };
+
+  // 8. CÁLCULO DE TOTAL ITEMS (Solo una vez)
   const safeItems = Array.isArray(cart?.items) ? cart.items : [];
-  
   const totalItems = safeItems.reduce((acc, item) => {
-    // Protección extra: asegurarse de que item y item.cantidad existen
     const cantidad = item?.cantidad || 0;
     return acc + cantidad;
   }, 0);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, refreshCart, totalItems }}>
+    <CartContext.Provider value={{ 
+        cart, 
+        addToCart, 
+        refreshCart, 
+        totalItems,
+        removeFromCart,
+        updateQuantity,
+        checkout
+    }}>
       {children}
     </CartContext.Provider>
   );

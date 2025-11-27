@@ -1,183 +1,183 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../Components/user/UserContext";
-import { useCart } from "../Components/cart/CartContext";
+import api from "../config/api";
 
 export default function Profile() {
-    // Obtiene datos y funciones del contexto de usuario
-    const { currentUser, logoutUser, users, setUsers } = useUser();
-    // Obtiene los items del carrito
-    const { cartItems } = useCart();
+  const { user, logout } = useUser();
+  const navigate = useNavigate();
 
-    // Estado para los datos del formulario de perfil
-    const [formData, setFormData] = useState({
-        nombre: "",
-        email: "",
-        calle: "",
-        departamento: "",
-        region: "",
-        comuna: "",
-        indicaciones: "",
-    });
+  // Estados del formulario
+  const [formData, setFormData] = useState({
+    nombre: "",
+    password: "",
+    fechaNacimiento: ""
+  });
 
-    // Carga los datos del usuario actual al montar el componente
-    useEffect(() => {
-        if (currentUser) {
-            setFormData({
-                nombre: currentUser.name || "",
-                lastname: currentUser.lastname || "",
-                email: currentUser.email || "",
-                phone: currentUser.phone || "",
-                calle: currentUser.address?.calle || "",
-                departamento: currentUser.address?.departamento || "",
-                region: currentUser.address?.region || "",
-                comuna: currentUser.address?.comuna || "",
-                indicaciones: currentUser.address?.indicaciones || "",
-            });
+  // NUEVO ESTADO: Para guardar las órdenes que vienen de Java
+  const [ordenes, setOrdenes] = useState([]);
+  const [loadingOrdenes, setLoadingOrdenes] = useState(true);
+
+  const [mensaje, setMensaje] = useState({ type: "", text: "" });
+  const [loading, setLoading] = useState(false);
+
+  // EFECTO: Cargar datos de usuario Y cargar órdenes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        nombre: user.nombre || "",
+        password: "",
+        fechaNacimiento: user.fechaNacimiento || ""
+      });
+
+      // --- CARGAR HISTORIAL DE COMPRAS ---
+      const fetchOrdenes = async () => {
+        try {
+          const response = await api.get(`/ordenes/usuario/${user.id}`);
+          setOrdenes(response.data);
+        } catch (error) {
+          console.error("Error cargando órdenes:", error);
+        } finally {
+          setLoadingOrdenes(false);
         }
-    }, [currentUser]);
+      };
+      fetchOrdenes();
 
-    // Maneja cambios en los inputs del formulario
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+    } else {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
-    // Guarda los cambios del perfil
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // Actualiza el usuario actual y la lista de usuarios
-        const updatedUser = { ...currentUser, ...formData };
-        const updatedUsers = users.map((u) =>
-            u.id === currentUser.id ? updatedUser : u
-        );
-        setUsers(updatedUsers);
-        // Persiste los cambios en localStorage
-        localStorage.setItem("users", JSON.stringify(updatedUsers));
-        localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-        alert("Datos actualizados correctamente!");
-    };
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    // Si no hay usuario logueado, muestra mensaje
-    if (!currentUser) return <p>No has iniciado sesión.</p>;
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
-    return (
-        <div className="container mt-4">
-            <h2>Perfil de {currentUser.nombre}</h2>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMensaje({ type: "", text: "" });
 
-            {/* Formulario de edición de perfil */}
-            <form onSubmit={handleSubmit}>
-                {/* Campo Nombre */}
-                <div className="mb-3">
-                    <label className="form-label">Nombre</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="nombre"
-                        value={formData.nombre}
-                        onChange={handleChange}
-                    />
-                </div>
+    try {
+      await api.put(`/usuarios/${user.id}`, formData);
+      setMensaje({ type: "success", text: "✅ Perfil actualizado correctamente" });
+    } catch (error) {
+      console.error("Error al actualizar:", error);
+      setMensaje({ type: "danger", text: "❌ Error al actualizar perfil" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                {/* Campo Email */}
-                <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input
-                        type="email"
-                        className="form-control"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                    />
-                </div>
+  if (!user) return null;
 
-                {/* Campo Calle */}
-                <div className="mb-3">
-                    <label className="form-label">Calle</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="calle"
-                        value={formData.calle}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                {/* Campo Departamento (opcional) */}
-                <div className="mb-3">
-                    <label className="form-label">Departamento (opcional)</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="departamento"
-                        value={formData.departamento}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                {/* Campo Región */}
-                <div className="mb-3">
-                    <label className="form-label">Región</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="region"
-                        value={formData.region}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                {/* Campo Comuna */}
-                <div className="mb-3">
-                    <label className="form-label">Comuna</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="comuna"
-                        value={formData.comuna}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                {/* Campo Indicaciones (opcional) */}
-                <div className="mb-3">
-                    <label className="form-label">Indicaciones (opcional)</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="indicaciones"
-                        value={formData.indicaciones}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                {/* Botones de acción */}
-                <button type="submit" className="btn btn-primary">
-                    Guardar cambios
-                </button>
-                <button
-                    type="button"
-                    className="btn btn-danger ms-2"
-                    onClick={logoutUser}
-                >
-                    Cerrar sesión
-                </button>
-            </form>
-
-            {/* Sección de compras realizadas */}
-            <div className="mt-4">
-                <h3>Compras realizadas</h3>
-                {cartItems.length === 0 ? (
-                    <p>No tienes productos en tu carrito actualmente.</p>
-                ) : (
-                    <ul className="list-group">
-                        {cartItems.map((item) => (
-                            <li key={item.id} className="list-group-item">
-                                {item.nombre} x {item.quantity} - ${item.precio * item.quantity}
-                            </li>
-                        ))}
-                    </ul>
-                )}
+  return (
+    <div className="container py-5">
+      <div className="row">
+        {/* COLUMNA IZQUIERDA: DATOS PERSONALES */}
+        <div className="col-md-5 mb-4">
+          <div className="card shadow-lg border-0 h-100">
+            <div className="card-header bg-primary text-white text-center py-4">
+              <h4 className="mb-0">Mi Perfil</h4>
+              <p className="mb-0 opacity-75">{user.email}</p>
+              {user.esEstudianteDuoc && (
+                <span className="badge bg-warning text-dark mt-2">✨ Miembro Duoc VIP</span>
+              )}
             </div>
+
+            <div className="card-body p-4">
+              {mensaje.text && (
+                <div className={`alert alert-${mensaje.type} text-center`}>{mensaje.text}</div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">Nombre</label>
+                  <input type="text" className="form-control" name="nombre" value={formData.nombre} onChange={handleChange} required />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">Fecha Nacimiento</label>
+                  <input type="date" className="form-control" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleChange} />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">Contraseña</label>
+                  <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} placeholder="Cambiar contraseña..." />
+                </div>
+
+                <div className="d-grid gap-2 mt-4">
+                  <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
+                    {loading ? "Guardando..." : "Guardar Cambios"}
+                  </button>
+                  <button type="button" className="btn btn-outline-danger" onClick={handleLogout}>
+                    Cerrar Sesión
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-    );
+
+        {/* COLUMNA DERECHA: HISTORIAL DE COMPRAS (NUEVO) */}
+        <div className="col-md-7">
+          <div className="card shadow-lg border-0">
+            <div className="card-header bg-white py-3">
+              <h4 className="mb-0 fw-bold text-dark">📦 Mis Pedidos</h4>
+            </div>
+            <div className="card-body p-0">
+              {loadingOrdenes ? (
+                <div className="text-center py-5">Cargando historial...</div>
+              ) : ordenes.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  <h5>Aún no has realizado compras</h5>
+                  <p>¡Explora nuestro catálogo y sube de nivel!</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover mb-0 align-middle">
+                    <thead className="table-light">
+                      <tr>
+                        <th># Orden</th>
+                        <th>Fecha</th>
+                        <th>Productos</th>
+                        <th className="text-end">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ordenes.map((orden) => (
+                        <tr key={orden.id}>
+                          <td className="fw-bold">#{orden.id}</td>
+                          <td>
+                            {new Date(orden.fecha).toLocaleDateString()} 
+                            <small className="text-muted d-block">
+                                {new Date(orden.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </small>
+                          </td>
+                          <td>
+                            <ul className="list-unstyled mb-0 small">
+                              {orden.detalles.map((d, index) => (
+                                <li key={index}>
+                                  {d.cantidad}x {d.producto?.nombre || "Producto"}
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td className="text-end fw-bold text-success">
+                            ${orden.total?.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
