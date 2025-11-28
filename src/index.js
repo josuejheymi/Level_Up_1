@@ -10,7 +10,7 @@ import "./Styles/styles.css";
 import { UserProvider } from './Components/user/UserContext';
 import { CartProvider } from './Components/cart/CartContext';
 import { ProductProvider } from './Components/products/ProductContext'; // <--- El nuevo que creamos
-
+import { BlogProvider } from './Components/blog/BlogContext';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
@@ -21,11 +21,11 @@ root.render(
       <ProductProvider>
         {/* 3. Carrito (Hijo, consume datos de los de arriba) */}
         <CartProvider>
-          
+          <BlogProvider>
           <BrowserRouter>
             <App />
           </BrowserRouter>
-
+          </BlogProvider>
         </CartProvider>
       </ProductProvider>
     </UserProvider>
