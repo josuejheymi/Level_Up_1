@@ -69,6 +69,11 @@ export default function Navbar() {
               <NavLink to="/" className="nav-link" onClick={() => setSearchQuery("")}>Inicio</NavLink>
             </li>
             <li className="nav-item">
+      <NavLink to="/blog" className="nav-link">
+        Noticias <span className="badge bg-danger rounded-pill ms-1" style={{fontSize: "0.6rem"}}>NEW</span>
+      </NavLink>
+    </li>
+            <li className="nav-item">
               <NavLink to="/categoria/todos" className="nav-link">Categorías</NavLink>
             </li>
             <li className="nav-item">

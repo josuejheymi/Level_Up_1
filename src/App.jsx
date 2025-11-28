@@ -11,38 +11,49 @@ import Profile from "./Pages/Profile";
 import AdminRoute from "./Components/common/AdminRoute";
 import Categoria from "./Pages/Categoria";
 import ProductDetail from "./Pages/ProductDetail";
+import BlogPage from "./Pages/BlogPage"; // <--- 1. IMPORTAR AQUÍ
 
 export default function App() {
   return (
     <div className="d-flex flex-column min-vh-100">
-      {/* El Navbar ahora usará useProducts() internamente para el buscador */}
+      {/* El Navbar usa useProducts() y useUser() internamente */}
       <Navbar />
       
       <main className="flex-fill">
         <Routes>
-          {/* Home ahora usará useProducts() internamente para listar */}
+          {/* Home */}
           <Route path="/" element={<Home />} />
           
+          {/* Admin Protegido */}
           <Route
             path="/admin"
             element={
               <AdminRoute>
-                {/* AdminPanel usará useProducts() para agregar items */}
                 <AdminPanel />
               </AdminRoute>
             }
           />
+
+          {/* Detalle de Producto y Reseñas */}
           <Route path="/producto/:id" element={<ProductDetail />} />
+
+          {/* Blog de Noticias (NUEVO) */}
+          <Route path="/blog" element={<BlogPage />} />  {/* <--- 2. RUTA AGREGADA */}
+
+          {/* Páginas Estándar */}
           <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          {/* Usuarios y Carrito */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/contact" element={<Contact />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/profile" element={<Profile />} />
           
-          {/* Categoria usará useProducts() para filtrar por la URL */}
+          {/* Filtro por Categoría */}
           <Route path="/categoria/:nombre" element={<Categoria />} />
           
+          {/* Error 404 */}
           <Route path="*" element={<h1 className="text-center mt-5">404 - Página no encontrada</h1>} />
         </Routes>
       </main>
