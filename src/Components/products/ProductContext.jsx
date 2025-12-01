@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { productService } from "../../services/productService";
+import api from "../../config/api";
 
 const ProductContext = createContext();
 
@@ -60,6 +61,16 @@ export const ProductProvider = ({ children }) => {
       return { success: false, error };
     }
   };
+  // 5. Actualizar Producto (NUEVO)
+  const updateProduct = async (id, updatedData) => {
+    try {
+      await api.put(`/productos/${id}`, updatedData);
+      await refreshProducts(); // Recargar la lista para ver los cambios
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
+  };
   return (
     <ProductContext.Provider value={{ 
       products: filteredProducts, // Exportamos YA filtrados
@@ -67,7 +78,8 @@ export const ProductProvider = ({ children }) => {
       searchQuery, 
       setSearchQuery, 
       addProduct,
-      deleteProduct, 
+      deleteProduct,
+      updateProduct,
       loading 
     }}>
       {children}
