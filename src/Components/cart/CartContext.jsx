@@ -122,11 +122,11 @@ export const CartProvider = ({ children }) => {
   };
 
   // 7. FUNCIÓN CHECKOUT (FINALIZAR COMPRA)
-  const checkout = async () => {
+  const checkout = async (direccionEnvio) => {
     if (!user?.id) return { success: false, message: "Usuario no identificado" };
 
     try {
-      const response = await api.post("/ordenes/checkout", { usuarioId: user.id });
+      const response = await api.post("/ordenes/checkout", { usuarioId: user.id,direccion: direccionEnvio });
       setCart({ items: [], total: 0 });
       return { success: true, orden: response.data };
     } catch (error) {
@@ -135,17 +135,11 @@ export const CartProvider = ({ children }) => {
       // --- MAGIA PARA LEER EL ERROR REAL ---
       let msg = "Error al procesar la compra";
       
-      if (error.response) {
-          // Si el backend mandó un mensaje de texto plano
-          if (typeof error.response.data === 'string') {
-              msg = error.response.data;
-          } 
-          // Si mandó un objeto JSON (ej: { error: "Stock insuficiente" })
-          else if (typeof error.response.data === 'object') {
-              msg = error.response.data.error || error.response.data.message || JSON.stringify(error.response.data);
-          }
+      if (error.response?.data) {
+         msg = typeof error.response.data === 'string' 
+               ? error.response.data 
+               : (error.response.data.error || JSON.stringify(error.response.data));
       }
-      
       return { success: false, message: msg };
     }
   };
