@@ -3,14 +3,10 @@ import { useCart } from "../Components/cart/CartContext";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Cart() {
-  // 1. Obtenemos datos y funciones del Contexto
   const { cart, removeFromCart, updateQuantity, checkout } = useCart();
-  
-  // 2. Hooks para navegación y estado de carga
   const navigate = useNavigate();
   const [procesando, setProcesando] = useState(false);
 
-  // 3. Validación de Carrito Vacío
   if (!cart?.items || cart.items.length === 0) {
     return (
       <div className="container mt-5 text-center fade-in">
@@ -24,28 +20,21 @@ export default function Cart() {
     );
   }
 
-  // 4. Calcular Subtotal Real (Matemático) para compararlo con el total del Backend
-  // Esto nos permite saber si hubo descuento
   const subtotalReal = (cart.items || []).reduce((acc, item) => {
     return acc + (item.precioUnitario * item.cantidad);
   }, 0);
 
-  // 5. Detectar Descuento
   const hayDescuento = (cart.total || 0) < subtotalReal;
   const montoDescuento = subtotalReal - (cart.total || 0);
 
-  // 6. MANEJADOR DE COMPRA (CHECKOUT)
   const handleCompra = async () => {
-    setProcesando(true); // Bloquear botón
-    
-    // Llamamos al Backend para generar la orden y descontar stock
+    setProcesando(true);
     const resultado = await checkout();
-    
-    setProcesando(false); // Desbloquear
+    setProcesando(false);
 
     if (resultado.success) {
       alert(`✅ ¡Compra exitosa!\nOrden #${resultado.orden.id} generada correctamente.`);
-      navigate("/"); // Redirigir al Home
+      navigate("/");
     } else {
       alert(`❌ Error al procesar la compra:\n${resultado.message}`);
     }
@@ -56,25 +45,26 @@ export default function Cart() {
       <h2 className="mb-4 fw-bold">Tu Carrito de Compras</h2>
       
       <div className="row">
-        {/* === TABLA DE PRODUCTOS (Izquierda) === */}
+        {/* === TABLA DE PRODUCTOS (Estilo Oscuro) === */}
         <div className="col-lg-8">
-          <div className="table-responsive shadow-sm rounded border">
-            <table className="table table-hover align-middle mb-0 bg-white">
-              <thead className="table-light">
+          <div className="table-responsive shadow-sm rounded border border-secondary">
+            {/* CAMBIO 1: Quitamos bg-white y ponemos table-dark */}
+            <table className="table table-hover table-dark align-middle mb-0">
+              <thead>
                 <tr>
-                  <th scope="col" className="ps-4">Producto</th>
-                  <th scope="col">Precio</th>
-                  <th scope="col" className="text-center">Cantidad</th>
-                  <th scope="col" className="text-end">Subtotal</th>
+                  <th scope="col" className="ps-4 text-success">Producto</th>
+                  <th scope="col" className="text-success">Precio</th>
+                  <th scope="col" className="text-center text-success">Cantidad</th>
+                  <th scope="col" className="text-end text-success">Subtotal</th>
                   <th scope="col" className="text-center pe-4"></th>
                 </tr>
               </thead>
               <tbody>
                 {(cart.items || []).map((item) => (
                   <tr key={item.id}>
-                    {/* Nombre y Categoría */}
                     <td className="ps-4">
-                        <div className="fw-bold text-dark">
+                        {/* CAMBIO 2: Texto blanco explícito */}
+                        <div className="fw-bold text-white">
                             {item.producto?.nombre || "Producto desconocido"}
                         </div>
                         <small className="text-muted text-uppercase" style={{ fontSize: "0.75rem" }}>
@@ -82,24 +72,26 @@ export default function Cart() {
                         </small>
                     </td>
                     
-                    {/* Precio Unitario */}
                     <td>${item.precioUnitario?.toLocaleString()}</td>
                     
-                    {/* Controles de Cantidad */}
+                    {/* CAMBIO 3: Botones de Cantidad Oscuros */}
                     <td className="text-center">
-                        <div className="btn-group btn-group-sm border rounded" role="group">
+                        <div className="btn-group btn-group-sm border border-secondary rounded" role="group">
                             <button 
-                                className="btn btn-light text-secondary"
+                                className="btn btn-outline-light" // Borde blanco fino
                                 onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
-                                disabled={item.cantidad <= 1} // Evitar bajar de 1 (usar basura para borrar)
+                                disabled={item.cantidad <= 1}
                             >
                                 -
                             </button>
-                            <span className="btn btn-light disabled text-dark fw-bold" style={{ width: "40px", backgroundColor: "#fff" }}>
+                            <span 
+                                className="btn btn-dark disabled text-white border-0 fw-bold" 
+                                style={{ width: "40px", opacity: 1 }}
+                            >
                                 {item.cantidad}
                             </span>
                             <button 
-                                className="btn btn-light text-secondary"
+                                className="btn btn-outline-light"
                                 onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
                             >
                                 +
@@ -107,19 +99,17 @@ export default function Cart() {
                         </div>
                     </td>
 
-                    {/* Subtotal por Item */}
                     <td className="text-end fw-bold">
                       ${(item.precioUnitario * item.cantidad).toLocaleString()}
                     </td>
 
-                    {/* Botón Eliminar */}
                     <td className="text-center pe-4">
                         <button 
                             className="btn btn-outline-danger btn-sm border-0 rounded-circle"
                             onClick={() => removeFromCart(item.producto.id)}
                             title="Eliminar del carrito"
                         >
-                            <i className="bi bi-trash"></i> 
+                            🗑️
                         </button>
                     </td>
                   </tr>
@@ -129,18 +119,17 @@ export default function Cart() {
           </div>
         </div>
 
-        {/* === RESUMEN DE PAGO (Derecha) === */}
+        {/* === RESUMEN DE PAGO (Estilo Oscuro) === */}
         <div className="col-lg-4 mt-4 mt-lg-0">
-          <div className="card border-0 shadow-sm bg-light p-4 sticky-top" style={{ top: "100px", zIndex: 1 }}>
-            <h4 className="mb-3 fw-bold">Resumen del Pedido</h4>
+          {/* Tarjeta oscura con borde sutil */}
+          <div className="card border border-secondary bg-dark p-4 sticky-top shadow-lg" style={{ top: "100px", zIndex: 1 }}>
+            <h4 className="mb-3 fw-bold text-white">Resumen del Pedido</h4>
             
-            {/* Subtotal */}
             <div className="d-flex justify-content-between mb-2">
               <span className="text-muted">Subtotal</span>
-              <span className="fw-bold">${subtotalReal.toLocaleString()}</span>
+              <span className="fw-bold text-white">${subtotalReal.toLocaleString()}</span>
             </div>
 
-            {/* Descuento Visual */}
             {hayDescuento ? (
               <div className="d-flex justify-content-between mb-3 text-success">
                 <span>
@@ -152,22 +141,20 @@ export default function Cart() {
                 </span>
               </div>
             ) : (
-              <div className="mb-3"></div> // Espacio vacío si no hay descuento
+              <div className="mb-3"></div>
             )}
 
-            <hr className="my-2" />
+            <hr className="my-2 border-secondary" />
 
-            {/* Total Final */}
             <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
-              <span className="h5 mb-0">Total a Pagar</span>
-              <span className="h3 mb-0 text-primary fw-bold">
+              <span className="h5 mb-0 text-white">Total a Pagar</span>
+              <span className="h3 mb-0 text-success fw-bold">
                 ${(cart.total || 0).toLocaleString()}
               </span>
             </div>
 
-            {/* Botón de Pago */}
             <button 
-                className="btn btn-success w-100 py-3 fw-bold shadow-sm rounded-pill transition-transform hover-scale"
+                className="btn btn-primary w-100 py-3 fw-bold shadow-sm rounded-pill transition-transform hover-scale"
                 onClick={handleCompra}
                 disabled={procesando}
             >
@@ -177,13 +164,13 @@ export default function Cart() {
                   Procesando...
                 </span>
               ) : (
-                "🔒 Pagar Ahora"
+                "Proceder al Pago"
               )}
             </button>
             
             <div className="text-center mt-3">
                 <small className="text-muted">
-                    <i className="bi bi-shield-lock"></i> Compra 100% Segura
+                     Compra 100% Segura
                 </small>
             </div>
           </div>

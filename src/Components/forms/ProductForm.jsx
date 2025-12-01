@@ -1,20 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useProducts } from "../products/ProductContext"; 
 
-// 1. Recibimos la prop 'onSuccess' (función para cerrar el formulario)
 export default function ProductForm({ onSuccess }) {
-  const { addProduct } = useProducts();
+  // 1. Traemos 'allProducts' para leer las categorías existentes
+  const { addProduct, allProducts } = useProducts();
 
   const [formData, setFormData] = useState({
     nombre: "",
     descripcion: "",
     precio: 0,
     stock: 0,
-    categoria: "Consolas",
+    categoria: "",
     imagenUrl: "",
   });
 
   const [mensaje, setMensaje] = useState("");
+
+  // 2. Lógica para obtener categorías únicas dinámicamente
+  const categoriasDisponibles = useMemo(() => {
+    // Categorías base que siempre queremos que estén
+    const defaults = ["Consolas", "Juegos", "Accesorios", "PC Gamer", "Sillas", "Ropa"];
+    
+    // Extraemos las categorías que ya existen en la base de datos
+    const existentes = allProducts.map(p => p.categoria);
+    
+    // Unimos todo y eliminamos duplicados con Set
+    const unicas = [...new Set([...defaults, ...existentes])];
+    
+    // Las ordenamos alfabéticamente
+    return unicas.sort();
+  }, [allProducts]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,20 +44,13 @@ export default function ProductForm({ onSuccess }) {
 
     if (resultado.success) {
       setMensaje("✅ Producto creado exitosamente");
-      
-      // Limpiar formulario
       setFormData({
-        nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "Consolas", imagenUrl: ""
+        nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "", imagenUrl: ""
       });
 
-      // 2. MAGIA UX: Si nos pasaron la función onSuccess, la ejecutamos tras 1.5 seg
-      // Esto permite que el usuario lea el mensaje "✅" antes de que se cierre el formulario.
       if (onSuccess) {
-        setTimeout(() => {
-            onSuccess(); 
-        }, 1500);
+        setTimeout(() => onSuccess(), 1500);
       }
-
     } else {
       console.error("Error:", resultado.error);
       setMensaje("❌ Error al crear producto");
@@ -50,7 +58,7 @@ export default function ProductForm({ onSuccess }) {
   };
 
   return (
-    <div className="card p-4 border-0"> {/* Le quité la sombra aquí para que no choque con la del contenedor padre */}
+    <div className="card p-4 border-0">
       <h4 className="mb-4 fw-bold text-primary">Agregar Nuevo Producto</h4>
       
       {mensaje && (
@@ -84,30 +92,43 @@ export default function ProductForm({ onSuccess }) {
           </div>
         </div>
 
+        {/* --- SELECCIÓN DINÁMICA DE CATEGORÍA --- */}
         <div className="mb-3">
           <label className="form-label fw-semibold">Categoría</label>
-          <select className="form-select" name="categoria" value={formData.categoria} onChange={handleChange}>
-            <option value="Consolas">Consolas</option>
-            <option value="Juegos">Juegos</option>
-            <option value="Accesorios">Accesorios</option>
-            <option value="PC Gamer">PC Gamer</option>
-            <option value="Sillas">Sillas</option>
-            <option value="Ropa">Ropa</option>
-          </select>
+          <input 
+            className="form-control" 
+            list="categoryOptions" 
+            name="categoria" 
+            value={formData.categoria} 
+            onChange={handleChange} 
+            placeholder="Selecciona o escribe una nueva..." 
+            required 
+          />
+          
+          {/* Aquí renderizamos las opciones dinámicas */}
+          <datalist id="categoryOptions">
+            {categoriasDisponibles.map((cat) => (
+                <option key={cat} value={cat} />
+            ))}
+          </datalist>
+          
+          <div className="form-text text-muted small">
+            💡 Si escribes un nombre nuevo (ej: "Figuras"), se creará esa categoría automáticamente.
+          </div>
         </div>
 
         <div className="mb-3">
           <label className="form-label fw-semibold">URL de Imagen</label>
           <input type="text" className="form-control" name="imagenUrl" value={formData.imagenUrl} onChange={handleChange} placeholder="https://..." required />
           {formData.imagenUrl && (
-              <div className="mt-2 text-center">
-                  <small className="text-muted">Vista previa:</small><br/>
-                  <img src={formData.imagenUrl} alt="Vista previa" style={{height: '80px', objectFit: 'contain'}} onError={(e) => e.target.style.display = 'none'} />
+              <div className="mt-2 text-center border rounded p-2 bg-light">
+                  <small className="text-muted d-block mb-1">Vista previa:</small>
+                  <img src={formData.imagenUrl} alt="Vista previa" style={{height: '100px', objectFit: 'contain'}} onError={(e) => e.target.style.display = 'none'} />
               </div>
           )}
         </div>
 
-        <button type="submit" className="btn btn-primary w-100 fw-bold py-2">
+        <button type="submit" className="btn btn-primary w-100 fw-bold py-2 shadow-sm">
             Guardar Producto
         </button>
       </form>

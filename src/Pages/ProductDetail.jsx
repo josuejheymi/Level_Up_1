@@ -40,16 +40,19 @@ export default function ProductDetail() {
     try {
       const payload = {
         usuarioId: user.id,
-        productoId: id,
+        productoId: parseInt(id),
         calificacion: parseInt(newReview.calificacion),
         comentario: newReview.comentario
       };
       
       const res = await api.post("/resenas", payload);
+
       setReviews([...reviews, res.data]); // Agregar visualmente
       setNewReview({ calificacion: 5, comentario: "" }); // Limpiar
+      alert("¡Gracias por tu opinión!");
     } catch (error) {
-      alert("Error al enviar reseña");
+      console.error(error);
+      alert("Error al enviar reseña: " + (error.response?.data || "Intenta de nuevo"));
     }
   };
 
