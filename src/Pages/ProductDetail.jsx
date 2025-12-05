@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import api from "../config/api";
 import { useCart } from "../Components/cart/CartContext";
 import { useUser } from "../Components/user/UserContext";
@@ -13,12 +13,22 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ calificacion: 5, comentario: "" });
   const [loading, setLoading] = useState(true);
+  // AGREGAR ESTA FUNCIÓN DENTRO DEL COMPONENTE ProductDetail
+const getAutoPlayUrl = (url) => {
+    if (!url) return null;
+    
+    // 1. Determina si usar '?' (primer parámetro) o '&' (parámetro adicional)
+    const separator = url.includes('?') ? '&' : '?';
+    
+    // 2. Agrega autoplay=1 y mute=1 (necesario para que Chrome/Safari lo permitan)
+    return `${url}${separator}autoplay=1&mute=1`;
+};
 
   // Cargar Producto y Reseñas
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const prodRes = await api.get(`/productos/${id}`); // Necesitamos este endpoint en Java
+        const prodRes = await api.get(`/productos/${id}`); 
         setProduct(prodRes.data);
 
         const revRes = await api.get(`/resenas/producto/${id}`);
@@ -47,8 +57,9 @@ export default function ProductDetail() {
       
       const res = await api.post("/resenas", payload);
 
-      setReviews([...reviews, res.data]); // Agregar visualmente
-      setNewReview({ calificacion: 5, comentario: "" }); // Limpiar
+      // Usar los datos de la respuesta para el nombre del autor
+      setReviews([...reviews, {...res.data, usuario: { nombre: user.nombre } } ]);
+      setNewReview({ calificacion: 5, comentario: "" }); 
       alert("¡Gracias por tu opinión!");
     } catch (error) {
       console.error(error);
@@ -56,30 +67,33 @@ export default function ProductDetail() {
     }
   };
 
-  if (loading) return <div className="container mt-5 text-center">Cargando...</div>;
-  if (!product) return <div className="container mt-5">Producto no encontrado</div>;
+  if (loading) return <div className="container mt-5 text-center text-white">Cargando...</div>;
+  if (!product) return <div className="container mt-5 text-white">Producto no encontrado</div>;
 
   return (
     <div className="container my-5 fade-in">
+      
       {/* SECCIÓN SUPERIOR: DETALLE PRODUCTO */}
       <div className="row">
         {/* Imagen Grande */}
         <div className="col-md-6 mb-4">
-          <img 
-            src={product.imagenUrl} 
-            alt={product.nombre} 
-            className="img-fluid rounded shadow-sm border"
-            style={{ width: "100%", maxHeight: "500px", objectFit: "contain" }}
-          />
+          <div className="card bg-dark border-secondary p-3 h-100">
+              <img 
+                src={product.imagenUrl} 
+                alt={product.nombre} 
+                className="img-fluid rounded border-secondary"
+                style={{ width: "100%", maxHeight: "500px", objectFit: "contain" }}
+              />
+          </div>
         </div>
 
         {/* Info y Compra */}
-        <div className="col-md-6">
-          <h1 className="fw-bold">{product.nombre}</h1>
-          <p className="text-muted text-uppercase">{product.categoria}</p>
+        <div className="col-md-6 text-white">
+          <h1 className="fw-bold text-white">{product.nombre}</h1>
+          <p className="text-secondary text-uppercase">{product.categoria}</p>
           <h2 className="text-primary fw-bold my-3">${product.precio?.toLocaleString()}</h2>
           
-          <p className="lead">{product.descripcion}</p>
+          <p className="lead text-white">{product.descripcion}</p>
           
           {/* Stock y Botón */}
           <div className="mt-4">
@@ -102,41 +116,63 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      <hr className="my-5" />
+      <hr className="my-5 border-secondary" />
 
-      {/* SECCIÓN INFERIOR: RESEÑAS */}
+      {/* === SECCIÓN INFERIOR: VIDEO Y RESEÑAS === */}
       <div className="row">
-        <div className="col-md-8">
-          <h3 className="mb-4">Opiniones de Clientes ({reviews.length})</h3>
+        
+        {/* Columna de Video (Si existe el URL) */}
+        {product.videoUrl && (
+    <div className="col-lg-6 mb-4">
+        <h4 className="text-white fw-bold mb-3">Video Presentación</h4>
+        <div className="ratio ratio-16x9 shadow-lg rounded-3 overflow-hidden border border-secondary">
+            <iframe 
+                width="100%" 
+                height="100%" 
+                // AHORA USAMOS LA FUNCIÓN QUE FUERZA EL AUTO-PLAY Y EL MUTE
+                src={getAutoPlayUrl(product.videoUrl)} 
+                title="Video del Producto" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerPolicy="strict-origin-when-cross-origin" 
+                allowFullScreen
+            ></iframe>
+        </div>
+    </div>
+)}
+
+        {/* Columna de Reseñas */}
+        <div className={`col-md-6 ${product.videoUrl ? 'col-lg-6' : 'col-lg-12'}`}> 
+          <h3 className="text-white fw-bold mb-4">Opiniones de Clientes ({reviews.length})</h3>
           
           {/* Lista de Reseñas */}
-          {reviews.length === 0 ? (
-            <p className="text-muted">No hay opiniones todavía. ¡Sé el primero!</p>
-          ) : (
-            reviews.map((rev) => (
-              <div key={rev.id} className="card mb-3 border-0 shadow-sm bg-light">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between">
-                    <h6 className="fw-bold">{rev.usuario?.nombre || "Anónimo"}</h6>
-                    <span className="text-warning">{"★".repeat(rev.calificacion)}</span>
+          <div className="mb-4" style={{maxHeight: '400px', overflowY: 'auto'}}>
+            {reviews.length === 0 ? (
+              <p className="text-secondary">No hay opiniones todavía. ¡Sé el primero!</p>
+            ) : (
+              reviews.map((rev) => (
+                <div key={rev.id} className="card mb-3 border-secondary shadow-sm bg-dark">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-start">
+                      <h6 className="fw-bold text-white mb-1">{rev.usuario?.nombre || "Anónimo"}</h6>
+                      <span className="text-warning">{"★".repeat(rev.calificacion)}</span>
+                    </div>
+                    <p className="mb-1 text-secondary">{rev.comentario}</p>
+                    <small className="text-muted">{new Date(rev.fecha).toLocaleDateString()}</small>
                   </div>
-                  <p className="mb-1">{rev.comentario}</p>
-                  <small className="text-muted">{new Date(rev.fecha).toLocaleDateString()}</small>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Formulario de Reseña */}
-        <div className="col-md-4">
-          <div className="card border-0 shadow p-4">
-            <h5 className="mb-3">Escribe tu opinión</h5>
+              ))
+            )}
+          </div>
+          
+          {/* Formulario de Reseña */}
+          <div className="card border-secondary shadow p-4 bg-dark">
+            <h5 className="mb-3 text-white fw-bold">Escribe tu opinión</h5>
             <form onSubmit={handleSubmitReview}>
               <div className="mb-3">
-                <label className="form-label">Calificación</label>
+                <label className="form-label text-white">Calificación</label>
                 <select 
-                    className="form-select"
+                    className="form-select bg-tertiary border-secondary text-white"
                     value={newReview.calificacion}
                     onChange={e => setNewReview({...newReview, calificacion: e.target.value})}
                 >
@@ -157,7 +193,7 @@ export default function ProductDetail() {
                     required
                 ></textarea>
               </div>
-              <button className="btn btn-dark w-100">Publicar Opinión</button>
+              <button className="btn btn-primary w-100 fw-bold">Publicar Opinión</button>
             </form>
           </div>
         </div>

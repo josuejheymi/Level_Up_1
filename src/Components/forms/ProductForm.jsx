@@ -143,6 +143,21 @@ export default function ProductForm({ productToEdit, onSuccess }) {
               </div>
           )}
         </div>
+        <div className="mb-3">
+          <label className="form-label fw-semibold text-white">Link de YouTube (Embed)</label>
+          <input 
+            type="url" 
+            className="form-control" 
+            name="videoUrl" 
+            value={formData.videoUrl} 
+            onChange={handleChange} 
+            placeholder="Ej: https://www.youtube.com/embed/..." 
+            // NO LO HACEMOS required, ya que no todos los productos tienen video
+          />
+          <div className="form-text text-secondary small">
+            💡 Usa el link de 'Insertar' de YouTube (Ej: https://www.youtube.com/embed/ID)
+          </div>
+        </div>
 
         <button type="submit" className="btn btn-primary w-100 fw-bold py-2 shadow-sm">
             {productToEdit ? "Guardar Cambios" : "Guardar Producto"}
