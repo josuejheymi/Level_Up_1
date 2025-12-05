@@ -153,20 +153,12 @@ export default function Cart() {
               </span>
             </div>
 
-            <button 
-                className="btn btn-primary w-100 py-3 fw-bold shadow-sm rounded-pill transition-transform hover-scale"
-                onClick={handleCompra}
-                disabled={procesando}
+            <Link 
+                to="/checkout" 
+                className="btn btn-success w-100 py-3 fw-bold shadow-sm rounded-pill transition-transform hover-scale"
             >
-              {procesando ? (
-                <span>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Procesando...
-                </span>
-              ) : (
-                "Proceder al Pago"
-              )}
-            </button>
+              Proceder al Pago
+            </Link>
             
             <div className="text-center mt-3">
                 <small className="text-muted">
