@@ -1,87 +1,108 @@
-import { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { productService } from "../../services/productService";
+import React, { createContext, useState, useEffect, useContext, useMemo } from "react";
 import api from "../../config/api";
 
 const ProductContext = createContext();
 
-export const useProducts = () => {
-  const context = useContext(ProductContext);
-  if (!context) throw new Error("useProducts debe usarse dentro de ProductProvider");
-  return context;
-};
+export const useProducts = () => useContext(ProductContext);
 
 export const ProductProvider = ({ children }) => {
-  const [products, setProducts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [allProducts, setAllProducts] = useState([]); // Todos los productos (crudos)
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState(""); // Estado del buscador global
 
-  // 1. Cargar productos al inicio
-  const refreshProducts = async () => {
-    setLoading(true);
+  // 1. CARGAR PRODUCTOS DEL BACKEND
+  const fetchProducts = async () => {
     try {
-      const data = await productService.getAll();
-      setProducts(data);
+      const res = await api.get("/productos");
+      setAllProducts(res.data);
     } catch (error) {
-      console.error("Error al cargar productos", error);
+      console.error("Error cargando productos:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    refreshProducts();
+    fetchProducts();
   }, []);
 
-  // 2. Lógica de Filtrado (La movimos de App.js aquí)
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery) return products;
-    return products.filter(p => 
-      p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.categoria?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [products, searchQuery]);
+  // 2. LÓGICA DE FILTRADO (AQUÍ ESTABA EL ERROR)
+  const products = useMemo(() => {
+    if (!searchTerm) return allProducts;
 
-  // 3. Crear producto (Para el Admin)
-  const addProduct = async (newProductData) => {
+    const term = searchTerm.toLowerCase();
+
+    return allProducts.filter((product) => {
+      // Validación defensiva del nombre
+      const nombreMatch = product.nombre?.toLowerCase().includes(term);
+      
+      // 🚨 CORRECCIÓN CLAVE: Validación de categoría (Soporta Objeto y String)
+      let categoriaMatch = false;
+      
+      if (product.categoria) {
+          if (typeof product.categoria === 'string') {
+              // Si por error quedó como string
+              categoriaMatch = product.categoria.toLowerCase().includes(term);
+          } else if (product.categoria.nombre) {
+              // LA FORMA CORRECTA: Es objeto, leemos .nombre
+              categoriaMatch = product.categoria.nombre.toLowerCase().includes(term);
+          }
+      }
+
+      return nombreMatch || categoriaMatch;
+    });
+  }, [allProducts, searchTerm]);
+
+  // 3. ACCIONES CRUD (Crear, Editar, Eliminar)
+  
+  // Agregar Producto
+  const addProduct = async (productData) => {
     try {
-      await productService.create(newProductData);
-      await refreshProducts(); // Recargamos la lista oficial
+      const res = await api.post("/productos", productData);
+      setAllProducts([...allProducts, res.data]);
       return { success: true };
     } catch (error) {
       return { success: false, error };
     }
   };
-  // 4. Eliminar producto (Para el Admin)
-  const deleteProduct = async (id) => {
-    try {
-      await productService.delete(id);
-      await refreshProducts(); // Recarga la lista tras borrar
-      return { success: true };
-    } catch (error) {
-      return { success: false, error };
-    }
-  };
-  // 5. Actualizar Producto (NUEVO)
+
+  // Actualizar Producto
   const updateProduct = async (id, updatedData) => {
     try {
-      await api.put(`/productos/${id}`, updatedData);
-      await refreshProducts(); // Recargar la lista para ver los cambios
+      const res = await api.put(`/productos/${id}`, updatedData);
+      setAllProducts(allProducts.map((p) => (p.id === id ? res.data : p)));
       return { success: true };
     } catch (error) {
       return { success: false, error };
     }
   };
+
+  // Eliminar Producto
+  const deleteProduct = async (id) => {
+    try {
+      await api.delete(`/productos/${id}`);
+      setAllProducts(allProducts.filter((p) => p.id !== id));
+      return { success: true };
+    } catch (error) {
+      console.error("Error eliminando:", error);
+      return { success: false, error };
+    }
+  };
+
   return (
-    <ProductContext.Provider value={{ 
-      products: filteredProducts, // Exportamos YA filtrados
-      allProducts: products,      // Por si acaso necesitamos los crudos
-      searchQuery, 
-      setSearchQuery, 
-      addProduct,
-      deleteProduct,
-      updateProduct,
-      loading 
-    }}>
+    <ProductContext.Provider
+      value={{
+        allProducts, // Lista completa sin filtrar (para AdminPanel)
+        products,    // Lista filtrada por buscador (para Home/Catálogo)
+        loading,
+        searchTerm,
+        setSearchTerm,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        refreshProducts: fetchProducts
+      }}
+    >
       {children}
     </ProductContext.Provider>
   );

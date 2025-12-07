@@ -1,23 +1,41 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useProducts } from "../products/ProductContext"; 
+import api from "../../config/api"; // Necesario para la nueva API de categorías
+import { useNavigate } from "react-router-dom"; // Hook para la navegación
 
-// Recibimos 'productToEdit' (si es null, es modo creación)
 export default function ProductForm({ productToEdit, onSuccess }) {
-  const { addProduct, updateProduct, allProducts } = useProducts();
+  const { addProduct, updateProduct } = useProducts();
+  const navigate = useNavigate();
+  
+  const [categories, setCategories] = useState([]);
+  const [mensaje, setMensaje] = useState("");
 
   const [formData, setFormData] = useState({
     nombre: "",
     descripcion: "",
     precio: 0,
     stock: 0,
-    categoria: "",
-    imagenUrl: "",
+    categoria: productToEdit?.categoria?.nombre || "", 
+    imagenUrl: productToEdit?.imagenUrl || "",
+    videoUrl: productToEdit?.videoUrl || "",
   });
+  
+  // ====================================================================
+  // 1. CARGA INICIAL DE CATEGORÍAS (desde la API)
+  // ====================================================================
+  useEffect(() => {
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get('/categorias');
+            setCategories(res.data); // Guarda la lista de objetos Categoria
+        } catch (error) {
+            console.error("Error al cargar categorías para el formulario:", error);
+        }
+    };
+    fetchCategories();
+  }, []); 
 
-  const [mensaje, setMensaje] = useState("");
-
-  // 1. DETECTAR MODO EDICIÓN
-  // Si nos pasan un producto, llenamos el formulario con sus datos
+  // 2. DETECTAR MODO EDICIÓN 
   useEffect(() => {
     if (productToEdit) {
       setFormData({
@@ -25,58 +43,72 @@ export default function ProductForm({ productToEdit, onSuccess }) {
         descripcion: productToEdit.descripcion,
         precio: productToEdit.precio,
         stock: productToEdit.stock,
-        categoria: productToEdit.categoria,
-        imagenUrl: productToEdit.imagenUrl
+        categoria: productToEdit.categoria?.nombre || "", 
+        imagenUrl: productToEdit.imagenUrl,
+        videoUrl: productToEdit.videoUrl || "",
       });
     } else {
-      // Si no, limpiamos
-      setFormData({ nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "", imagenUrl: "" });
+      setFormData({ nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "", imagenUrl: "", videoUrl: "" });
     }
   }, [productToEdit]);
-
-  // 2. LISTA DINÁMICA DE CATEGORÍAS
-  // Lee las que ya existen en la BD para sugerirlas
-  const categoriasDisponibles = useMemo(() => {
-    const defaults = ["Consolas", "Juegos", "Accesorios", "PC Gamer", "Sillas", "Ropa"];
-    const existentes = allProducts.map(p => p.categoria);
-    const unicas = [...new Set([...defaults, ...existentes])];
-    return unicas.sort();
-  }, [allProducts]);
-
+  
+  // 🚨 CORRECCIÓN CLAVE: CONVERSIÓN DE TIPO DE DATOS 🚨
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    
+    let finalValue = value;
+
+    // Si el campo es precio o stock, lo convertimos de String a Number
+    if (name === 'precio' || name === 'stock') {
+        // Usamos parseFloat para precio (puede tener decimales) y parseInt para stock (entero)
+        // CRÍTICO: Si el valor es vacío (''), lo forzamos a 0 para evitar que el Backend reciba String y falle el cast a Number.
+        finalValue = value === '' ? 0 : parseFloat(value); 
+        
+        // Manejo específico de stock como entero
+        if (name === 'stock') {
+            finalValue = value === '' ? 0 : parseInt(value, 10);
+        }
+        
+        // Si la conversión resulta en NaN (ej: alguien teclea "abc"), lo forzamos a 0
+        if (isNaN(finalValue)) finalValue = 0;
+    }
+    
+    setFormData({ ...formData, [name]: finalValue });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje(""); 
 
+    if (!formData.categoria) {
+      setMensaje("❌ Debe seleccionar una categoría.");
+      return;
+    }
+
     let result;
 
-    // 3. DECIDIR SI CREAR O ACTUALIZAR
+    // Nota: El formData ya contiene los valores 'precio' y 'stock' como números (gracias al handleChange corregido)
     if (productToEdit) {
-        result = await updateProduct(productToEdit.id, formData);
+        result = await updateProduct(productToEdit.id, formData); 
     } else {
         result = await addProduct(formData);
     }
-
+    
     if (result.success) {
       setMensaje(productToEdit ? "✅ Producto actualizado correctamente" : "✅ Producto creado exitosamente");
       
       if (!productToEdit) {
-         // Limpiar solo si es creación nueva
-         setFormData({ nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "", imagenUrl: "" });
+          setFormData({ nombre: "", descripcion: "", precio: 0, stock: 0, categoria: "", imagenUrl: "", videoUrl: "" });
       }
 
-      // Cerrar automáticamente
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1500);
       }
 
     } else {
       console.error("Error:", result.error);
-      setMensaje("❌ Error al guardar");
+      // Muestra el mensaje de error específico del Backend para debug
+      setMensaje("❌ Error al guardar: " + (result.error.response?.data || result.error.message));
     }
   };
 
@@ -86,23 +118,23 @@ export default function ProductForm({ productToEdit, onSuccess }) {
         {productToEdit ? "✏️ Editar Producto" : "➕ Agregar Nuevo Producto"}
       </h4>
       
-      {mensaje && (
-        <div className={`alert ${mensaje.includes("✅") ? "alert-success" : "alert-danger"}`}>
-          {mensaje}
-        </div>
-      )}
+      {mensaje && (<div className={`alert ${mensaje.includes("✅") ? "alert-success" : "alert-danger"}`}>{mensaje}</div>)}
 
       <form onSubmit={handleSubmit}>
+        
+        {/* 1. CAMPO: NOMBRE DEL PRODUCTO */}
         <div className="mb-3">
           <label className="form-label fw-semibold text-white">Nombre del Producto</label>
           <input type="text" className="form-control" name="nombre" value={formData.nombre} onChange={handleChange} required />
         </div>
 
+        {/* 2. CAMPO: DESCRIPCIÓN */}
         <div className="mb-3">
           <label className="form-label fw-semibold text-white">Descripción</label>
           <textarea className="form-control" name="descripcion" value={formData.descripcion} onChange={handleChange} required rows="3" />
         </div>
 
+        {/* 3. CAMPOS: PRECIO Y STOCK */}
         <div className="row">
           <div className="col-md-6 mb-3">
             <label className="form-label fw-semibold text-white">Precio</label>
@@ -117,23 +149,42 @@ export default function ProductForm({ productToEdit, onSuccess }) {
           </div>
         </div>
 
-        {/* SELECCIÓN DE CATEGORÍA INTELIGENTE */}
+        {/* 🚨 4. DROPDOWN DE CATEGORÍAS (Integración) 🚨 */}
         <div className="mb-3">
           <label className="form-label fw-semibold text-white">Categoría</label>
-          <input 
-            className="form-control" 
-            list="categoryOptions" 
-            name="categoria" 
-            value={formData.categoria} 
-            onChange={handleChange} 
-            placeholder="Selecciona o escribe una nueva..." 
-            required 
-          />
-          <datalist id="categoryOptions">
-            {categoriasDisponibles.map((cat) => <option key={cat} value={cat} />)}
-          </datalist>
+          <div className="input-group">
+            <select 
+                className="form-select bg-dark border-secondary text-white" 
+                name="categoria" 
+                value={formData.categoria} 
+                onChange={handleChange} 
+                required
+            >
+                <option value="" disabled>Seleccione una categoría existente</option>
+                {categories.map(cat => (
+                    <option key={cat.id} value={cat.nombre}>
+                        {cat.nombre}
+                    </option>
+                ))}
+            </select>
+            {/* Botón para ir a crear nuevas categorías */}
+            <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => {
+                    onSuccess(); 
+                    navigate('/admin?tab=categories'); 
+                }}
+            >
+                ➕ Crear
+            </button>
+          </div>
+          <div className="form-text text-secondary small">
+            Si la categoría no existe, créala usando el botón 'Crear'.
+          </div>
         </div>
-
+        
+        {/* 5. CAMPO: URL de IMAGEN */}
         <div className="mb-3">
           <label className="form-label fw-semibold text-white">URL de Imagen</label>
           <input type="text" className="form-control" name="imagenUrl" value={formData.imagenUrl} onChange={handleChange} placeholder="https://..." required />
@@ -143,6 +194,8 @@ export default function ProductForm({ productToEdit, onSuccess }) {
               </div>
           )}
         </div>
+        
+        {/* 6. CAMPO: LINK DE YOUTUBE */}
         <div className="mb-3">
           <label className="form-label fw-semibold text-white">Link de YouTube (Embed)</label>
           <input 
@@ -152,7 +205,6 @@ export default function ProductForm({ productToEdit, onSuccess }) {
             value={formData.videoUrl} 
             onChange={handleChange} 
             placeholder="Ej: https://www.youtube.com/embed/..." 
-            // NO LO HACEMOS required, ya que no todos los productos tienen video
           />
           <div className="form-text text-secondary small">
             💡 Usa el link de 'Insertar' de YouTube (Ej: https://www.youtube.com/embed/ID)
@@ -160,7 +212,7 @@ export default function ProductForm({ productToEdit, onSuccess }) {
         </div>
 
         <button type="submit" className="btn btn-primary w-100 fw-bold py-2 shadow-sm">
-            {productToEdit ? "Guardar Cambios" : "Guardar Producto"}
+          {productToEdit ? "Guardar Cambios" : "Guardar Producto"}
         </button>
       </form>
     </div>

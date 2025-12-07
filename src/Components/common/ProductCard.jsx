@@ -21,7 +21,6 @@ export default function ProductCard({ product }) {
                         style={{ 
                             height: "200px", 
                             objectFit: "contain",
-                            // Opacidad si no hay stock
                             opacity: sinStock ? 0.5 : 1,
                             transition: "transform 0.3s ease"
                         }}
@@ -30,7 +29,7 @@ export default function ProductCard({ product }) {
                 
                 {/* Badge Visual de Agotado */}
                 {sinStock && (
-                    <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-light bg-opacity-50">
+                    <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-50">
                         <span className="badge bg-secondary fs-5 shadow text-uppercase">Agotado</span>
                     </div>
                 )}
@@ -42,8 +41,9 @@ export default function ProductCard({ product }) {
                     <h5 className="card-title fw-bold text-truncate mb-1">{product.nombre}</h5>
                 </Link>
                 
+                {/* CATEGORIA CORREGIDA: Accedemos al campo nombre */}
                 <p className="text-muted small mb-3 text-uppercase fw-semibold" style={{fontSize: "0.75rem"}}>
-                    {product.categoria}
+                    {product.categoria?.nombre || 'Sin Categoría'}
                 </p>
                 
                 {/* Precio */}
@@ -58,7 +58,7 @@ export default function ProductCard({ product }) {
                     <button
                         className={`btn w-100 fw-bold rounded-pill shadow-sm transition-all ${sinStock ? 'btn-secondary' : 'btn-primary'}`}
                         onClick={() => addToCart(product)}
-                        disabled={sinStock} // Bloquea el click nativo
+                        disabled={sinStock} 
                         style={{ cursor: sinStock ? "not-allowed" : "pointer" }}
                     >
                         {sinStock ? "Sin Stock" : "Agregar al Carrito"}

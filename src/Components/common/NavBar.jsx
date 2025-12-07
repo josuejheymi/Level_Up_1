@@ -1,43 +1,62 @@
-import { NavLink, useNavigate, useLocation } from "react-router-dom"; // Importamos useNavigate y useLocation
+import React from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom"; 
 import CartWidget from "../cart/CartWidget";
 import { useUser } from "../user/UserContext";
 import UserDropdown from "../user/UserDropdown";
 import SearchBar from "./SearchBar";
-import { useProducts } from "../products/ProductContext";
+import { useProducts } from "../products/ProductContext"; 
 
 export default function Navbar() {
   const { user } = useUser();
-  const { setSearchQuery } = useProducts();
-  const navigate = useNavigate(); // Hook para navegar
-  const location = useLocation(); // Hook para saber dónde estamos
+  const { setSearchTerm } = useProducts(); 
+  
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Función inteligente para manejar la búsqueda
   const handleSearch = (query) => {
     // 1. Actualizamos el filtro global
-    setSearchQuery(query);
+    setSearchTerm(query);
 
-    // 2. Si no estamos en el Home, nos movemos al Home
+    // 2. Lógica de Redirección
     if (location.pathname !== "/") {
       navigate("/");
     }
 
-    // 3. (UX PRO) Hacemos scroll suave hacia los resultados
-    // Esperamos un poquito (100ms) para asegurar que la página cambió
-    setTimeout(() => {
-      const productSection = document.querySelector(".all-products-section");
-      if (productSection) {
-        productSection.scrollIntoView({ behavior: "smooth" });
-      }
-    }, 100);
+    // 3. (UX PRO) Scroll con Offset (Para que el Navbar no tape los resultados)
+    if (query.trim().length > 0) {
+        setTimeout(() => {
+            const productSection = document.querySelector(".all-products-section");
+            if (productSection) {
+                // Obtenemos la posición del elemento
+                const elementPosition = productSection.getBoundingClientRect().top;
+                // Sumamos el scroll actual
+                const offsetPosition = elementPosition + window.pageYOffset - 120; // ⬅️ -120px de espacio para el Navbar
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth"
+                });
+            }
+        }, 100); // Pequeño delay para asegurar que React renderizó
+    }
+  };
+
+  // Helper para resetear búsqueda al hacer click en links
+  const handleResetSearch = () => {
+      setSearchTerm("");
+      window.scrollTo(0, 0);
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm" style={{zIndex: 1000}}>
       <div className="container">
+        
+        {/* LOGO */}
         <NavLink 
             to="/" 
             className="navbar-brand d-flex align-items-center"
-            onClick={() => setSearchQuery("")} // Al hacer click en el logo, reseteamos la búsqueda
+            onClick={handleResetSearch}
         >
           <span className="fs-4 fw-bold text-uppercase text-primary">Level Up</span>
           <span className="fs-4 fw-bold text-uppercase text-light ms-2">Gamer</span>
@@ -52,27 +71,27 @@ export default function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* BARRA DE BÚSQUEDA CENTRAL */}
-        {/* Pasamos nuestra nueva función handleSearch en lugar de setSearchQuery directo */}
+        {/* BARRA DE BÚSQUEDA CENTRAL (Desktop) */}
         <div className="d-none d-lg-block mx-auto" style={{ width: "40%" }}>
             <SearchBar onSearch={handleSearch} />
         </div>
 
         <div className="collapse navbar-collapse" id="navbarNav">
-          {/* SearchBar móvil */}
+          
+          {/* SearchBar (Móvil) */}
           <div className="d-lg-none my-3">
              <SearchBar onSearch={handleSearch} />
           </div>
 
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
-              <NavLink to="/" className="nav-link" onClick={() => setSearchQuery("")}>Inicio</NavLink>
+              <NavLink to="/" className="nav-link" onClick={handleResetSearch}>Inicio</NavLink>
             </li>
             <li className="nav-item">
-      <NavLink to="/blog" className="nav-link">
-        Noticias <span className="badge bg-danger rounded-pill ms-1" style={{fontSize: "0.6rem"}}>NEW</span>
-      </NavLink>
-    </li>
+              <NavLink to="/blog" className="nav-link">
+                Noticias <span className="badge bg-danger rounded-pill ms-1" style={{fontSize: "0.6rem"}}>NEW</span>
+              </NavLink>
+            </li>
             <li className="nav-item">
               <NavLink to="/categoria/todos" className="nav-link">Categorías</NavLink>
             </li>

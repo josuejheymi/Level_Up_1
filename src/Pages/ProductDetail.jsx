@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../config/api";
 import { useCart } from "../Components/cart/CartContext";
 import { useUser } from "../Components/user/UserContext";
@@ -13,16 +13,13 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ calificacion: 5, comentario: "" });
   const [loading, setLoading] = useState(true);
-  // AGREGAR ESTA FUNCIÓN DENTRO DEL COMPONENTE ProductDetail
-const getAutoPlayUrl = (url) => {
+
+  // Helper para video autoplay (muteado para que funcione en Chrome)
+  const getAutoPlayUrl = (url) => {
     if (!url) return null;
-    
-    // 1. Determina si usar '?' (primer parámetro) o '&' (parámetro adicional)
     const separator = url.includes('?') ? '&' : '?';
-    
-    // 2. Agrega autoplay=1 y mute=1 (necesario para que Chrome/Safari lo permitan)
     return `${url}${separator}autoplay=1&mute=1`;
-};
+  };
 
   // Cargar Producto y Reseñas
   useEffect(() => {
@@ -57,7 +54,6 @@ const getAutoPlayUrl = (url) => {
       
       const res = await api.post("/resenas", payload);
 
-      // Usar los datos de la respuesta para el nombre del autor
       setReviews([...reviews, {...res.data, usuario: { nombre: user.nombre } } ]);
       setNewReview({ calificacion: 5, comentario: "" }); 
       alert("¡Gracias por tu opinión!");
@@ -90,7 +86,12 @@ const getAutoPlayUrl = (url) => {
         {/* Info y Compra */}
         <div className="col-md-6 text-white">
           <h1 className="fw-bold text-white">{product.nombre}</h1>
-          <p className="text-secondary text-uppercase">{product.categoria}</p>
+          
+          {/* 🚨 CORRECCIÓN AQUÍ: Acceder a .categoria.nombre 🚨 */}
+          <p className="text-secondary text-uppercase fw-bold">
+            {product.categoria?.nombre || 'Sin Categoría'}
+          </p>
+
           <h2 className="text-primary fw-bold my-3">${product.precio?.toLocaleString()}</h2>
           
           <p className="lead text-white">{product.descripcion}</p>
@@ -123,23 +124,22 @@ const getAutoPlayUrl = (url) => {
         
         {/* Columna de Video (Si existe el URL) */}
         {product.videoUrl && (
-    <div className="col-lg-6 mb-4">
-        <h4 className="text-white fw-bold mb-3">Video Presentación</h4>
-        <div className="ratio ratio-16x9 shadow-lg rounded-3 overflow-hidden border border-secondary">
-            <iframe 
-                width="100%" 
-                height="100%" 
-                // AHORA USAMOS LA FUNCIÓN QUE FUERZA EL AUTO-PLAY Y EL MUTE
-                src={getAutoPlayUrl(product.videoUrl)} 
-                title="Video del Producto" 
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                referrerPolicy="strict-origin-when-cross-origin" 
-                allowFullScreen
-            ></iframe>
-        </div>
-    </div>
-)}
+            <div className="col-lg-6 mb-4">
+                <h4 className="text-white fw-bold mb-3">Video Presentación</h4>
+                <div className="ratio ratio-16x9 shadow-lg rounded-3 overflow-hidden border border-secondary">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={getAutoPlayUrl(product.videoUrl)} 
+                        title="Video del Producto" 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        referrerPolicy="strict-origin-when-cross-origin" 
+                        allowFullScreen
+                    ></iframe>
+                </div>
+            </div>
+        )}
 
         {/* Columna de Reseñas */}
         <div className={`col-md-6 ${product.videoUrl ? 'col-lg-6' : 'col-lg-12'}`}> 
@@ -172,7 +172,7 @@ const getAutoPlayUrl = (url) => {
               <div className="mb-3">
                 <label className="form-label text-white">Calificación</label>
                 <select 
-                    className="form-select bg-tertiary border-secondary text-white"
+                    className="form-select bg-dark border-secondary text-white"
                     value={newReview.calificacion}
                     onChange={e => setNewReview({...newReview, calificacion: e.target.value})}
                 >
@@ -185,7 +185,7 @@ const getAutoPlayUrl = (url) => {
               </div>
               <div className="mb-3">
                 <textarea 
-                    className="form-control" 
+                    className="form-control bg-dark border-secondary text-white" 
                     rows="3" 
                     placeholder="¿Qué te pareció el producto?"
                     value={newReview.comentario}
