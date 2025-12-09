@@ -20,7 +20,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "test:karma": "karma start"
+    "test:karma": "karma start karma.conf.js"
   },
   "eslintConfig": {
     "extends": [
@@ -41,10 +41,18 @@
     ]
   },
   "devDependencies": {
-    "jasmine-core": "^5.12.0",
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "jasmine-core": "^5.13.0",
     "karma": "^6.4.4",
     "karma-chrome-launcher": "^3.2.0",
     "karma-jasmine": "^5.1.0",
-    "karma-webpack": "^5.0.1"
+    "karma-webpack": "^5.0.1",
+    "process": "^0.11.10",
+    "style-loader": "^4.0.0",
+    "webpack-cli": "^6.0.1"
   }
 }

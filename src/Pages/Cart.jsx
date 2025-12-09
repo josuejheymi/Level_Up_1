@@ -1,10 +1,29 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useCart } from "../Components/cart/CartContext";
 import { Link } from "react-router-dom";
 
+/**
+ * COMPONENTE: CARRITO DE COMPRAS
+ * ----------------------------------------------------
+ * Responsabilidad: Mostrar la lista de items seleccionados, permitir editar cantidades
+ * y mostrar el total a pagar antes del Checkout.
+ * * Puntos de Aprendizaje:
+ * 1. Consumo de Contexto: Usamos 'useCart' para leer y modificar el estado global del carrito.
+ * 2. Cálculo Seguro: Evitamos errores matemáticos (NaN) validando los datos antes de operar.
+ * 3. Renderizado Condicional: Mostramos una vista vacía si no hay productos.
+ */
 export default function Cart() {
-  const { cart, removeFromCart, updateQuantity } = useCart();
   
+  // 1. OBTENER DATOS Y FUNCIONES DEL CONTEXTO
+  const { cart, removeFromCart, updateQuantity } = useCart();
+
+  // 2. EFECTO DE SCROLL
+  // Al cargar la página, aseguramos que la vista empiece desde arriba.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // 3. RENDERIZADO CONDICIONAL (Carrito Vacío)
   if (!cart?.items || cart.items.length === 0) {
     return (
       <div className="container mt-5 text-center fade-in">
@@ -18,19 +37,28 @@ export default function Cart() {
     );
   }
 
-  // Cálculos de descuento
+  // 4. LÓGICA DE CÁLCULO (Subtotal y Descuentos)
+  
+  // Calculamos el subtotal sumando (precio * cantidad) de cada item.
+  // Usamos .reduce() que es ideal para transformar un array en un solo número.
   const subtotalReal = (cart.items || []).reduce((acc, item) => {
-    return acc + (item.precioUnitario * item.cantidad);
+    // Validación Defensiva:
+    // Si 'precioUnitario' viene null del backend, usamos 0 para no romper la suma.
+    const precio = item.precioUnitario || item.producto?.precio || 0;
+    return acc + (precio * item.cantidad);
   }, 0);
+
+  // Detectamos si el total final (que viene del backend con lógica de negocio) es menor al subtotal real.
   const hayDescuento = (cart.total || 0) < subtotalReal;
   const montoDescuento = subtotalReal - (cart.total || 0);
 
   return (
     <div className="container mt-5 mb-5 fade-in">
-      <h2 className="mb-4 fw-bold text-white">Tu Carrito de Compras</h2>
+      <h2 className="mb-4 fw-bold text-white text-uppercase">Tu Carrito de Compras</h2>
       
       <div className="row">
-        {/* === TABLA DE PRODUCTOS (Estilo Oscuro) === */}
+        
+        {/* === COLUMNA IZQUIERDA: LISTA DE PRODUCTOS === */}
         <div className="col-lg-8">
           <div className="table-responsive shadow-sm rounded border border-secondary">
             <table className="table table-hover table-dark align-middle mb-0 bg-transparent">
@@ -44,64 +72,89 @@ export default function Cart() {
                 </tr>
               </thead>
               <tbody>
-                {(cart.items || []).map((item) => (
-                  <tr key={item.id}>
-                    <td className="ps-4">
-                        <div className="fw-bold text-white">
-                            {item.producto?.nombre || "Producto desconocido"}
-                        </div>
-                        {/* 🚨 CORRECCIÓN CLAVE AQUÍ: Acceder a .categoria.nombre 🚨 */}
-                        <small className="text-muted text-uppercase" style={{ fontSize: "0.75rem" }}>
-                            {item.producto?.categoria?.nombre} 
-                        </small>
-                    </td>
-                    
-                    <td>${item.precioUnitario?.toLocaleString()}</td>
-                    
-                    <td className="text-center">
-                        <div className="btn-group btn-group-sm border border-secondary rounded" role="group">
+                {/* Iteramos sobre los items del carrito */}
+                {(cart.items || []).map((item) => {
+                  
+                  // Precio seguro por fila
+                  const precioSeguro = item.precioUnitario || item.producto?.precio || 0;
+
+                  return (
+                    <tr key={item.id}>
+                        {/* 1. INFO DEL PRODUCTO */}
+                        <td className="ps-4">
+                            <div className="d-flex align-items-center">
+                                {/* Imagen (Opcional, comentada por ahora) */}
+                                {/* <img src={item.producto?.imagenUrl} width="40" className="me-2 rounded" /> */}
+                                <div>
+                                    <div className="fw-bold text-white">
+                                        {item.producto?.nombre || "Producto desconocido"}
+                                    </div>
+                                    <small className="text-muted text-uppercase" style={{ fontSize: "0.75rem" }}>
+                                        {item.producto?.categoria?.nombre || "General"} 
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
+                        
+                        {/* 2. PRECIO UNITARIO */}
+                        <td>${precioSeguro.toLocaleString()}</td>
+                        
+                        {/* 3. CONTROLES DE CANTIDAD (+ / -) */}
+                        <td className="text-center">
+                            <div className="btn-group btn-group-sm border border-secondary rounded" role="group">
+                                <button 
+                                    className="btn btn-outline-light"
+                                    onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
+                                    disabled={item.cantidad <= 1} // No permitir bajar de 1
+                                >
+                                    -
+                                </button>
+                                <span className="btn btn-dark disabled text-white border-0 fw-bold px-2" style={{ minWidth: "35px", opacity: 1 }}>
+                                    {item.cantidad}
+                                </span>
+                                <button 
+                                    className="btn btn-outline-light" 
+                                    onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </td>
+
+                        {/* 4. SUBTOTAL DE LA FILA */}
+                        <td className="text-end fw-bold">
+                        ${(precioSeguro * item.cantidad).toLocaleString()}
+                        </td>
+
+                        {/* 5. BOTÓN ELIMINAR */}
+                        <td className="text-center pe-4">
                             <button 
-                                className="btn btn-outline-light"
-                                onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
-                                disabled={item.cantidad <= 1}
+                                className="btn btn-outline-danger btn-sm border-0 rounded-circle"
+                                onClick={() => removeFromCart(item.producto.id)}
+                                title="Eliminar del carrito"
                             >
-                                -
+                                🗑️
                             </button>
-                            <span className="btn btn-dark disabled text-white border-0 fw-bold" style={{ width: "40px", opacity: 1 }}>{item.cantidad}</span>
-                            <button className="btn btn-outline-light" onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}>+</button>
-                        </div>
-                    </td>
-
-                    <td className="text-end fw-bold">
-                      ${(item.precioUnitario * item.cantidad).toLocaleString()}
-                    </td>
-
-                    <td className="text-center pe-4">
-                        <button 
-                            className="btn btn-outline-danger btn-sm border-0 rounded-circle"
-                            onClick={() => removeFromCart(item.producto.id)}
-                            title="Eliminar del carrito"
-                        >
-                            🗑️
-                        </button>
-                    </td>
-                  </tr>
-                ))}
+                        </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* === RESUMEN DE PAGO (Derecha) === */}
+        {/* === COLUMNA DERECHA: RESUMEN DE PAGO === */}
         <div className="col-lg-4 mt-4 mt-lg-0">
           <div className="card border border-secondary bg-dark p-4 sticky-top shadow-lg" style={{ top: "100px", zIndex: 1 }}>
-            <h4 className="mb-3 fw-bold text-white">Resumen del Pedido</h4>
+            <h4 className="mb-3 fw-bold text-white text-uppercase">Resumen</h4>
             
             <div className="d-flex justify-content-between mb-2">
               <span className="text-muted">Subtotal</span>
               <span className="fw-bold text-white">${subtotalReal.toLocaleString()}</span>
             </div>
 
+            {/* Descuento Condicional (Solo si aplica) */}
             {hayDescuento && (
               <div className="d-flex justify-content-between mb-3 text-success">
                 <span>Descuento Duoc (20%)</span>
@@ -109,15 +162,17 @@ export default function Cart() {
               </div>
             )}
 
-            <hr className="my-2 border-secondary" />
+            <hr className="my-3 border-secondary" />
 
-            <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
+            {/* Total Final */}
+            <div className="d-flex justify-content-between align-items-center mb-4">
               <span className="h5 mb-0 text-white">Total a Pagar</span>
               <span className="h3 mb-0 text-success fw-bold">
                 ${(cart.total || 0).toLocaleString()}
               </span>
             </div>
 
+            {/* Botón Checkout */}
             <Link 
                 to="/checkout" 
                 className="btn btn-primary w-100 py-3 fw-bold shadow-sm rounded-pill transition-transform hover-scale"
@@ -126,8 +181,8 @@ export default function Cart() {
             </Link>
             
             <div className="text-center mt-3">
-                <small className="text-muted">
-                     Compra 100% Segura
+                <small className="text-muted d-flex align-items-center justify-content-center gap-1">
+                    🔒 Compra 100% Segura
                 </small>
             </div>
           </div>

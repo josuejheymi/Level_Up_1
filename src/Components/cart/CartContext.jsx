@@ -2,8 +2,14 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import api from "../../config/api";
 import { useUser } from "../user/UserContext";
 
+// 1. CREACIÓN DEL CONTEXTO
+// Almacén global para los datos del carrito.
 const CartContext = createContext();
 
+/**
+ * 2. CUSTOM HOOK: useCart
+ * Facilita el acceso al contexto y protege contra usos fuera del Provider.
+ */
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -12,14 +18,26 @@ export const useCart = () => {
   return context;
 };
 
+/**
+ * 3. PROVIDER
+ * Maneja toda la lógica de negocio del carrito: agregar, quitar, sumar totales y comprar.
+ */
 export const CartProvider = ({ children }) => {
   const { user } = useUser();
   
-  // 1. ESTADO INICIAL
+  // --- ESTADO PRINCIPAL ---
+  // Guardamos la estructura exacta que devuelve el Backend (items + total)
   const [cart, setCart] = useState({ items: [], total: 0 });
 
-  // 2. REFRESH CART
+  /**
+   * FUNCIÓN: Actualizar Carrito (READ)
+   * Obtiene el estado actual del carrito desde la base de datos.
+   * * Concepto clave: useCallback
+   * Memorizamos esta función para que no cambie en cada renderizado.
+   * Esto evita bucles infinitos cuando la ponemos en el useEffect.
+   */
   const refreshCart = useCallback(async () => {
+    // Si no hay usuario, el carrito debe estar vacío (Seguridad visual)
     if (!user?.id) {
       setCart({ items: [], total: 0 });
       return;
@@ -29,35 +47,43 @@ export const CartProvider = ({ children }) => {
       const response = await api.get(`/carrito/${user.id}`);
       const data = response.data;
       
+      // Validación defensiva: Aseguramos que items sea siempre un array
       setCart({
         ...data,
         items: Array.isArray(data?.items) ? data.items : [], 
         total: data?.total || 0
       });
     } catch (error) {
-      console.error("Error cargando carrito:", error);
-      setCart({ items: [], total: 0 });
+      console.error("Error sincronizando carrito:", error);
+      // No reseteamos a cero aquí para evitar parpadeos si falla la red momentáneamente
     }
   }, [user]);
 
-  // 3. EFECTO
+  /**
+   * EFECTO: Sincronización Automática
+   * Cada vez que cambia el usuario (login/logout) o carga la app, refrescamos el carrito.
+   */
   useEffect(() => {
     refreshCart();
   }, [refreshCart]);
 
-  // 4. ADD TO CART
+  /**
+   * ACCIÓN: Agregar al Carrito (CREATE)
+   * Valida stock localmente antes de llamar al servidor para ahorrar peticiones.
+   */
   const addToCart = async (product, cantidad = 1) => {
     if (!user) {
-      alert("Por favor, inicia sesión para comprar.");
+      alert(" >:V Por favor, inicia sesión para comprar.");
       return;
     }
 
-    // Validación local de stock
+    // 1. Verificamos si ya tenemos este producto en el carrito local
     const itemEnCarrito = cart.items.find(item => item.producto.id === product.id);
     const cantidadActual = itemEnCarrito ? itemEnCarrito.cantidad : 0;
 
+    // 2. Validación de Stock (Frontend)
     if (cantidadActual + cantidad > product.stock) {
-      alert(`⚠️ No puedes agregar más. Stock disponible: ${product.stock}`);
+      alert(` :( Stock insuficiente. Disponible: ${product.stock}`);
       return;
     }
 
@@ -68,23 +94,26 @@ export const CartProvider = ({ children }) => {
         cantidad: cantidad
       };
 
+      // 3. Enviamos al Backend
       const response = await api.post("/carrito/agregar", payload);
       const data = response.data;
 
+      // 4. Actualizamos el estado con la respuesta del servidor (Fuente de verdad)
       setCart({
         ...data,
         items: Array.isArray(data?.items) ? data.items : [],
         total: data?.total || 0
       });
       
-      alert("Producto agregado correctamente");
     } catch (error) {
       console.error("Error al agregar:", error);
       alert(error.response?.data?.error || "Error al agregar al carrito");
     }
   };
 
-  // 5. REMOVE FROM CART
+  /**
+   * ACCIÓN: Eliminar Item (DELETE)
+   */
   const removeFromCart = async (productId) => {
     if (!user?.id) return;
     try {
@@ -101,10 +130,14 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // 6. UPDATE QUANTITY
+  /**
+   * ACCIÓN: Actualizar Cantidad (UPDATE)
+   * Se usa para los botones (+) y (-) dentro del carrito.
+   */
   const updateQuantity = async (productId, newQuantity) => {
     if (!user?.id) return;
     try {
+      // Usamos PUT para modificar un recurso existente
       const response = await api.put(`/carrito/${user.id}/producto/${productId}`, null, {
         params: { cantidad: newQuantity }
       });
@@ -121,20 +154,37 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // 7. FUNCIÓN CHECKOUT (FINALIZAR COMPRA)
-  const checkout = async (direccionEnvio) => {
+  /**
+   * UTILIDAD: Limpiar Carrito Local
+   * Se usa después de un checkout exitoso para resetear la vista inmediatamente.
+   */
+  const clearCart = () => {
+    setCart({ items: [], total: 0 });
+  };
+
+  /**
+   * PROCESO DE PAGO (CHECKOUT)
+   * Coordina el envío de la orden y la limpieza del carrito.
+   */
+  const checkout = async (datosEnvio) => {
     if (!user?.id) return { success: false, message: "Usuario no identificado" };
 
     try {
-      const response = await api.post("/ordenes/checkout", { usuarioId: user.id,direccion: direccionEnvio });
-      setCart({ items: [], total: 0 });
+      const payload = {
+        usuarioId: user.id,
+        ...datosEnvio // Esparce: { direccion, region, comuna }
+      };
+
+      const response = await api.post("/ordenes/checkout", payload);
+      
+      clearCart(); // Si tuvo éxito, limpiamos visualmente
       return { success: true, orden: response.data };
+
     } catch (error) {
       console.error("Error en checkout:", error);
       
-      // --- MAGIA PARA LEER EL ERROR REAL ---
+      // Manejo robusto de errores para mostrar mensaje claro al usuario
       let msg = "Error al procesar la compra";
-      
       if (error.response?.data) {
          msg = typeof error.response.data === 'string' 
                ? error.response.data 
@@ -144,13 +194,16 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // 8. CÁLCULO DE TOTAL ITEMS (Solo una vez)
+  /**
+   * ESTADO DERIVADO: Total de Items
+   * Concepto: No necesitamos un state para esto.
+   * Se calcula al vuelo (on-the-fly) cada vez que 'cart.items' cambia.
+   * Usamos .reduce() para sumar todas las cantidades.
+   */
   const safeItems = Array.isArray(cart?.items) ? cart.items : [];
-  const totalItems = safeItems.reduce((acc, item) => {
-    const cantidad = item?.cantidad || 0;
-    return acc + cantidad;
-  }, 0);
+  const totalItems = safeItems.reduce((acc, item) => acc + (item?.cantidad || 0), 0);
 
+  // Exponemos las funciones y datos al resto de la app
   return (
     <CartContext.Provider value={{ 
         cart, 
@@ -159,6 +212,7 @@ export const CartProvider = ({ children }) => {
         totalItems,
         removeFromCart,
         updateQuantity,
+        clearCart,
         checkout
     }}>
       {children}

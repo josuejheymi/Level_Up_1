@@ -1,158 +1,229 @@
 import React, { useState } from "react";
 import { useCart } from "../Components/cart/CartContext";
 import { useUser } from "../Components/user/UserContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import api from "../config/api"; 
 
+/**
+ * Componente: Checkout (Finalizar Compra)
+ * Responsabilidad: Recopilar datos de envío, procesar el pago (simulado) y crear la orden.
+ * * Conceptos Clave:
+ * 1. Formularios Controlados: Manejamos inputs de dirección/región.
+ * 2. Validación de Sesión: Si no hay usuario, redirigimos al login.
+ * 3. Comunicación con API: Enviamos un POST para guardar la venta en la base de datos.
+ */
 export default function Checkout() {
-  const { cart, checkout } = useCart();
-  const { user } = useUser();
-  const navigate = useNavigate();
+  
+  // 1. HOOKS
+  const { cart, clearCart } = useCart(); // Datos del carrito
+  const { user } = useUser();            // Datos del usuario logueado
+  const navigate = useNavigate();        // Para redirigir tras la compra
 
-  const [direccion, setDireccion] = useState("");
+  // 2. ESTADO DEL FORMULARIO DE ENVÍO
+  const [formData, setFormData] = useState({
+    direccion: "",
+    region: "",
+    comuna: ""
+  });
+  
+  // Estado de carga para el botón "Pagar"
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  // Si el carrito está vacío, lo enviamos de vuelta
-  if (!cart?.items || cart.items.length === 0) {
-    navigate("/cart");
-    return null;
-  }
+  // 3. CÁLCULOS DE TOTALES (Frontend)
+  // Calculamos subtotal sumando (precio * cantidad) de cada item.
+  // Usamos || 0 para evitar NaN si algún dato viene corrupto.
+  const subtotal = (cart.items || []).reduce((acc, item) => {
+      const precio = item.precioUnitario || item.producto?.precio || 0;
+      return acc + (precio * item.cantidad);
+  }, 0);
+  
+  const total = cart.total || subtotal; 
 
-  const handleFinalizar = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  // --- HANDLERS ---
 
-    if (!direccion || direccion.trim() === "") {
-      setError("La dirección de envío es obligatoria.");
-      setLoading(false);
-      return;
+  // Actualiza los campos del formulario al escribir
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  /**
+   * PROCESO DE PAGO
+   * Se ejecuta al enviar el formulario.
+   */
+  const handlePayment = async (e) => {
+    e.preventDefault(); // Evita recarga
+    setLoading(true);   // Bloquea el botón
+
+    // Validación de seguridad: Usuario debe estar logueado
+    if (!user) {
+        alert("🔒 Debes iniciar sesión para comprar.");
+        navigate("/login");
+        return;
     }
 
-    const resultado = await checkout(direccion);
+    try {
+      // A. Preparamos el payload (JSON) para el Backend
+      // Debe coincidir con lo que espera el OrdenController.java
+      const payload = {
+        usuarioId: user.id,
+        direccion: formData.direccion,
+        region: formData.region,
+        comuna: formData.comuna
+      };
 
-    setLoading(false);
+      console.log("Enviando orden:", payload); // Debug
 
-    if (resultado.success) {
-      alert(`🎉 ¡Felicidades! Tu pedido #${resultado.orden.id} va en camino a: ${direccion}`);
-      navigate("/profile");
-    } else {
-      const errorMsg = resultado.message.replace("Error en la compra: ", "");
-      setError(errorMsg);
+      // B. Enviamos la petición POST
+      const res = await api.post("/ordenes/checkout", payload);
+
+      // C. Si todo sale bien (Status 200 OK):
+      clearCart(); // 1. Vaciamos el carrito visualmente
+      alert("¡Compra Exitosa! Gracias por preferir Level Up.");
+      
+      // 2. Redirigimos a la página de detalle de la orden recién creada.
+      // El backend nos devuelve el objeto orden creado, que incluye el nuevo ID.
+      navigate(`/ordenes/${res.data.id}`); 
+
+    } catch (error) {
+      console.error("Error procesando pago:", error);
+      // Mostramos el mensaje de error que viene del backend (ej: "Stock insuficiente")
+      const msg = error.response?.data || "Hubo un error al procesar tu compra.";
+      alert("X " + msg);
+    } finally {
+      setLoading(false); // Desbloqueamos el botón pase lo que pase
     }
   };
 
-  const subtotalReal = (cart.items || []).reduce((acc, item) => {
-    return acc + (item.precioUnitario * item.cantidad);
-  }, 0);
-  const montoDescuento = subtotalReal - (cart.total || 0);
-  const hayDescuento = montoDescuento > 0.01; // Usamos un margen pequeño
+  // --- RENDERIZADO: CARRITO VACÍO ---
+  if (!cart.items || cart.items.length === 0) {
+    return (
+        <div className="container text-center mt-5 text-white fade-in">
+            <div style={{fontSize: "4rem"}}>🛒</div>
+            <h2 className="mt-3">Tu carrito está vacío</h2>
+            <button onClick={() => navigate("/")} className="btn btn-primary mt-3 rounded-pill fw-bold">
+                Volver a la Tienda
+            </button>
+        </div>
+    );
+  }
 
+  // --- RENDERIZADO: FORMULARIO ---
   return (
-    <div className="container my-5 fade-in">
-      <h2 className="mb-4 fw-bold text-white">Finalizar Compra y Envío</h2>
+    <div className="container py-5 fade-in">
+      <h2 className="text-uppercase fw-bold text-white mb-4">Finalizar Compra</h2>
       
       <div className="row">
-        {/* === COLUMNA IZQUIERDA: FORMULARIO === */}
-        <div className="col-md-7 mb-4">
-          {/* Tarjeta de Formulario: Fondo Oscuro, Borde Secundario */}
-          <div className="card shadow-lg p-4 bg-dark border border-secondary">
-            <h4 className="mb-3 text-white fw-bold">Datos de Envío</h4>
-            
-            {error && <div className="alert alert-danger">{error}</div>}
-
-            <form onSubmit={handleFinalizar}>
-              <div className="mb-3">
-                <label className="form-label text-white">Nombre</label>
-                <input type="text" className="form-control" value={user?.nombre || ''} disabled />
-              </div>
-              <div className="mb-3">
-                <label className="form-label text-white">Email</label>
-                <input type="email" className="form-control" value={user?.email || ''} disabled />
-              </div>
+        
+        {/* COLUMNA IZQUIERDA: Formulario de Envío */}
+        <div className="col-md-7">
+          <div className="card bg-dark border-secondary p-4 text-white shadow-lg">
+            <h4 className="mb-3 text-primary">Datos de Envío</h4>
+            <form onSubmit={handlePayment}>
               
-              <div className="mb-3">
-                <label className="form-label fw-bold text-white">Dirección de Entrega</label>
-                <textarea 
-                    className="form-control" 
-                    rows="3" 
-                    placeholder="Ej: Av. Siempreviva 742, Springfield"
-                    value={direccion}
-                    onChange={(e) => setDireccion(e.target.value)}
-                    required
-                ></textarea>
-                <div className="form-text text-secondary">
-                    Recuerda incluir calle, número y comuna.
+              <div className="row">
+                {/* Selector de Región */}
+                <div className="col-md-6 mb-3">
+                    <label className="form-label">Región</label>
+                    <select 
+                        className="form-select bg-secondary text-white border-0" 
+                        name="region" 
+                        value={formData.region}
+                        onChange={handleChange} 
+                        required
+                    >
+                        <option value="">Selecciona...</option>
+                        <option value="Metropolitana">Metropolitana</option>
+                        <option value="Valparaíso">Valparaíso</option>
+                        <option value="Biobío">Biobío</option>
+                        <option value="Araucanía">Araucanía</option>
+                        <option value="Los Lagos">Los Lagos</option>
+                    </select>
+                </div>
+                
+                {/* Input de Comuna */}
+                <div className="col-md-6 mb-3">
+                    <label className="form-label">Comuna</label>
+                    <input 
+                        type="text" 
+                        className="form-control bg-secondary text-white border-0" 
+                        name="comuna" 
+                        value={formData.comuna}
+                        onChange={handleChange} 
+                        required 
+                        placeholder="Ej: Providencia" 
+                    />
                 </div>
               </div>
 
-              <h4 className="mt-4 mb-3 text-white fw-bold">Método de Pago</h4>
-              {/* ALERTA CORREGIDA */}
-              <div className="alert bg-secondary text-white border-primary">
-                💳 **Simulación:** El pago se procesará con la tarjeta de prueba.
+              {/* Input de Dirección Exacta */}
+              <div className="mb-3">
+                <label className="form-label">Dirección Exacta</label>
+                <input 
+                    type="text" 
+                    className="form-control bg-secondary text-white border-0" 
+                    name="direccion" 
+                    value={formData.direccion}
+                    onChange={handleChange} 
+                    required 
+                    placeholder="Calle, Número, Depto..." 
+                />
               </div>
 
+              <h4 className="mt-4 mb-3 text-primary">Método de Pago</h4>
+              <div className="p-3 border border-success rounded mb-3 bg-opacity-10 bg-success d-flex align-items-center gap-3">
+                <div className="form-check m-0">
+                    <input className="form-check-input" type="radio" name="pago" id="webpay" defaultChecked readOnly />
+                    <label className="form-check-label fw-bold" htmlFor="webpay">
+                        WebPay Plus (Simulado)
+                    </label>
+                </div>
+                {/* Icono de Tarjeta */}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+              </div>
+
+              {/* Botón de Pago */}
               <button 
                 type="submit" 
-                className="btn btn-primary w-100 py-3 fw-bold mt-4" // btn-primary es Verde Neón en tu tema
+                className="btn btn-success w-100 py-3 fw-bold fs-5 mt-2 shadow-lg hover-scale" 
                 disabled={loading}
               >
                 {loading ? (
-                  <span>
-                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                    Procesando Pago...
-                  </span>
+                    <span><span className="spinner-border spinner-border-sm me-2"></span>Procesando...</span>
                 ) : (
-                  `🔒 Pagar $${cart.total?.toLocaleString()}`
+                    `Pagar $${total.toLocaleString()}`
                 )}
               </button>
             </form>
           </div>
         </div>
 
-        {/* === COLUMNA DERECHA: RESUMEN === */}
+        {/* COLUMNA DERECHA: Resumen de Pedido (Sticky) */}
         <div className="col-md-5 mt-4 mt-md-0">
-          <div className="card bg-dark border-secondary p-4 sticky-top shadow-lg" style={{ top: "100px", zIndex: 1 }}>
-            <h5 className="mb-3 text-white fw-bold">Resumen del Carrito</h5>
+          <div className="card bg-black border border-secondary p-4 text-white sticky-top shadow" style={{top: "100px"}}>
+            <h4 className="mb-3 border-bottom border-secondary pb-2">Resumen del Pedido</h4>
             
-            {/* Lista de Items */}
             <ul className="list-group list-group-flush mb-3">
-              {cart.items.map((item) => (
-                // Items de la lista oscuros
-                <li key={item.id} className="list-group-item bg-dark border-secondary d-flex justify-content-between text-white">
-                  <div className="text-truncate" style={{maxWidth: '70%'}}>
-                    <small>{item.cantidad}x {item.producto.nombre}</small>
-                  </div>
-                  <small className="text-secondary">${(item.precioUnitario * item.cantidad).toLocaleString()}</small>
-                </li>
-              ))}
+              {cart.items.map((item) => {
+                  const precio = item.precioUnitario || item.producto?.precio || 0;
+                  return (
+                    <li key={item.id} className="list-group-item bg-black text-white d-flex justify-content-between align-items-center border-secondary px-0 py-3">
+                      <div className="d-flex align-items-center gap-3">
+                         <span className="badge bg-secondary rounded-pill">{item.cantidad}</span>
+                         <span className="fw-semibold">{item.producto?.nombre}</span>
+                      </div>
+                      <span className="text-success">${(precio * item.cantidad).toLocaleString()}</span>
+                    </li>
+                  );
+              })}
             </ul>
             
-            <hr className="my-2 border-secondary" />
-
-            {/* Desglose de Precios */}
-            <div className="d-flex justify-content-between mb-2">
-              <span className="text-secondary">Subtotal (sin descuento):</span>
-              <span className="fw-bold text-white">${subtotalReal.toLocaleString()}</span>
-            </div>
-
-            {hayDescuento && (
-              <div className="d-flex justify-content-between mb-3 text-success">
-                <span className="fw-bold">Descuento Duoc (20%):</span>
-                <span className="fw-bold">- ${montoDescuento.toLocaleString()}</span>
-              </div>
-            )}
-
-            <hr className="my-2 border-secondary" />
-
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <span className="h5 mb-0 text-white">Total a Pagar</span>
-              <span className="h3 mb-0 text-success fw-bold">
-                ${cart.total?.toLocaleString()}
-              </span>
+            <div className="d-flex justify-content-between fw-bold fs-4 text-white border-top border-secondary pt-3">
+              <span>Total a Pagar</span>
+              <span className="text-success">${total.toLocaleString()}</span>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
