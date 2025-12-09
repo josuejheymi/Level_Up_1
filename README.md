@@ -1,197 +1,100 @@
-# Getting Started with Create React App
+# 🎮 Level Up Gamer - E-commerce Full Stack
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Level Up Gamer** es una plataforma de comercio electrónico diseñada para la venta de hardware y periféricos gaming. Este proyecto implementa una arquitectura Full Stack robusta, separando el Frontend (React) del Backend (Spring Boot), con una base de datos relacional (MySQL) y autenticación segura.
 
-## Available Scripts
+## 🚀 Tecnologías Utilizadas
 
-In the project directory, you can run:
+### Frontend
+* **Framework:** React 18
+* **Estilos:** Bootstrap 5 + CSS Personalizado (Tema Dark/Gamer).
+* **Routing:** React Router DOM v6.
+* **Gestión de Estado:** Context API (Nativo de React).
+* **Cliente HTTP:** Axios (con interceptores para JWT).
+* **Testing:** Jasmine + Karma (Pruebas unitarias de lógica de negocio).
 
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
----------
-###1. Estructura general del proyecto
-
-Framework: React para el frontend.
-
-Ruteo: React Router (Routes y Route) para navegación entre páginas.
-
-Estado global: Se maneja con Context API (UserContext y CartContext).
-
-Componentes: Separados en carpetas Components, Pages y Data.
-
-Estilos: Bootstrap para diseño responsivo.
-
-
+### Backend
+* **Framework:** Spring Boot 3 (Java 17).
+* **Seguridad:** Spring Security + JWT (JSON Web Tokens).
+* **Persistencia:** Spring Data JPA + Hibernate.
+* **Base de Datos:** MySQL.
 
 ---
 
-2. Contextos (User y Cart)
+## ⚙️ Funcionalidades Principales
 
-Propósito: Compartir datos entre varios componentes sin pasar props manualmente.
-
-UserContext: Maneja información del usuario (login, logout, perfil).
-
-CartContext: Maneja el carrito de compras (añadir, remover, limpiar items).
-
-Clave:
-
-Los componentes hijos se reciben como children.
-
-useContext permite acceder al estado y funciones de forma sencilla.
-
-useEffect se usa para sincronizar el carrito con localStorage.
-
-
-
+1.  **Catálogo de Productos:** Visualización dinámica, filtrado por categorías y búsqueda en tiempo real.
+2.  **Carrito de Compras:** Persistencia local, cálculo de subtotales y gestión de stock.
+3.  **Autenticación y Usuarios:**
+    * Login y Registro con validaciones.
+    * Roles de usuario (ADMIN vs CLIENTE).
+    * Panel de Perfil con historial de compras.
+4.  **Panel de Administración:** Rutas protegidas para la gestión de inventario (CRUD de productos).
+5.  **Blog de Noticias:** Sección informativa integrada.
+6.  **Sistema de Órdenes:** Generación de pedidos y visualización de detalles de compra.
 
 ---
 
-3. Componentes principales
+## 🛠️ Instalación y Configuración
 
-App.jsx:
+Sigue estos pasos para ejecutar el proyecto en tu entorno local.
 
-Es el contenedor principal.
+### 1. Base de Datos (MySQL)
+1.  Abre tu gestor de base de datos (MySQL Workbench o similar).
+2.  Crea una base de datos llamada `levelup_db`.
+3.  Ejecuta el script `script_datos.sql` ubicado en la raíz de este proyecto para poblar las tablas iniciales (Usuarios, Categorías, Productos).
 
-Envuelve todo en UserProvider y CartProvider.
+### 2. Backend (Spring Boot)
+1.  Abre el proyecto del servidor en tu IDE favorito (IntelliJ IDEA, Eclipse).
+2.  Configura el archivo `application.properties` con tus credenciales de MySQL:
+    ```properties
+    spring.datasource.url=jdbc:mysql://localhost:3306/levelup_db
+    spring.datasource.username=TU_USUARIO
+    spring.datasource.password=TU_CONTRASEÑA
+    ```
+3.  Ejecuta la aplicación (`LevelUpApplication.java`). El servidor iniciará en `http://localhost:8080`.
 
-Contiene el Navbar y el Routes para las páginas.
-
-Pasa los productos a Home y AdminPanel mediante props.
-
-
-Navbar:
-
-Muestra links de navegación y el nombre “Level Up Gamer”.
-
-Puede consumir UserContext para mostrar login o perfil.
-
-
-Páginas (Pages):
-
-Home: Lista de productos.
-
-AdminPanel: Gestión de productos.
-
-Cart: Muestra productos añadidos.
-
-Login, Register, Profile: Manejo de usuario.
-
-
-
+### 3. Frontend (React)
+1.  Abre una terminal en la carpeta raíz del frontend.
+2.  Instala las dependencias:
+    ```bash
+    npm install
+    ```
+3.  Inicia el servidor de desarrollo:
+    ```bash
+    npm start
+    ```
+4.  Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ---
 
-4. Funcionalidades importantes
+## 🧪 Ejecución de Pruebas (Testing)
 
-Productos: Se guardan en App usando useState.
+El proyecto utiliza **Jasmine** y **Karma** para pruebas unitarias enfocadas en la lógica de negocio extraída (`src/utils`).
 
-Carrito:
+Para ejecutar los tests:
 
-Añadir, remover, limpiar.
+```bash
+npm run test:karma
 
-Persistente usando localStorage.
+src/
+├── Components/      # Componentes reutilizables
+│   ├── common/      # Navbar, Footer, Listas genéricas
+│   ├── products/    # Lógica específica de productos
+│   ├── cart/        # Widgets y lógica del carrito
+│   └── user/        # Contextos y dropdowns de usuario
+├── Pages/           # Vistas principales (Home, Login, Cart, Admin)
+├── utils/           # Lógica pura extraída para Testing (Jasmine)
+├── config/          # Configuración de Axios e Interceptores
+└── Styles/          # Archivos CSS globales y temas
+Conceptos Clave Implementados
+Context API: Se utiliza para evitar el "prop drilling".
 
+UserContext: Maneja la sesión y el token JWT.
 
-Rutas protegidas: AdminRoute permite que solo admins accedan a ciertas páginas.
+CartContext: Gestiona el estado global del carrito.
 
-Resposividad: Bootstrap asegura que el diseño se vea bien en distintos dispositivos.
+ProductContext: Centraliza la carga y filtrado de productos.
 
+Separación de Lógica: Las validaciones complejas y cálculos matemáticos se extrajeron a la carpeta utils para facilitar las pruebas unitarias independientes con Jasmine.
 
-
----
-
-5. Testeo
-
-Herramientas: Aunque la pauta dice Jasmine/Karma, tú usaste Jest.
-
-Pruebas principales:
-
-Renderizado de componentes (Navbar, Home, etc.).
-
-Funcionalidad de Contextos (CartProvider y UserProvider).
-
-Verificación de elementos en pantalla.
-
-
-Errores comunes:
-
-Navigate necesita <Router> envolviendo todo.
-
-Componentes importados incorrectamente pueden ser undefined.
-
-
-
-
----
-
-6. Conceptos clave para explicar
-
-children: Elementos que pasan dentro de un componente contenedor.
-
-Context API: Manejo de estado global para no pasar props innecesariamente.
-
-Props y State: Props para pasar datos a hijos, State para cambios internos.
-
-useEffect: Para efectos secundarios, como sincronizar con localStorage.
-
-React Router: Navegación y protección de rutas.
+Rutas Protegidas: Uso de componentes Wrapper (AdminRoute) para restringir el acceso a paneles administrativos.

@@ -1,29 +1,41 @@
+// karma.conf.js
 module.exports = function(config) {
   config.set({
-    basePath: '',
-    frameworks: ['jasmine'],
+    frameworks: ['jasmine', 'webpack'],
+    
+    // SOLO cargamos los specs. Webpack cargará la lógica porque hicimos el import.
     files: [
-      'src/**/*.spec.js' // Aquí van todos los archivos de prueba
+      'src/utils/**/*.logic.spec.js' 
     ],
+
     preprocessors: {
-      'src/**/*.spec.js': ['webpack']
+      'src/utils/**/*.logic.spec.js': ['webpack']
     },
+
     webpack: {
-      // Configuración mínima de webpack para pruebas
+      mode: 'development',
       module: {
         rules: [
           {
-            test: /\.jsx?$/,
+            test: /\.(js|jsx)$/,
             exclude: /node_modules/,
             use: {
-              loader: 'babel-loader'
+              loader: 'babel-loader',
+              options: {
+                presets: ['@babel/preset-env', '@babel/preset-react']
+              }
             }
           }
         ]
       }
     },
-    reporters: ['progress', 'coverage'],
-    browsers: ['ChromeHeadless'],
+
+    reporters: ['progress'],
+    port: 9876,
+    colors: true,
+    logLevel: config.LOG_INFO,
+    autoWatch: false,
+    browsers: ['Chrome'],
     singleRun: true
   });
 };

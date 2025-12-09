@@ -11,7 +11,7 @@
   --bg-secondary: #121212;     /* Gris muy oscuro para tarjetas */
   --bg-tertiary: #1E1E1E;      /* Gris oscuro para inputs/modales */
   
-  /* 🔥 EL CAMBIO CLAVE AQUÍ 🔥 */
+  /*  EL CAMBIO CLAVE AQUÍ  */
   /* Hemos intercambiado los colores. Ahora el "primary" es VERDE */
   --accent-primary: #39FF14;   /* Verde Neón (Color Principal) */
   --accent-secondary: #1E90FF; /* Azul Eléctrico (Color Secundario) */
