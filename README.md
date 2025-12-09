@@ -1,8 +1,8 @@
-# 🎮 Level Up Gamer - E-commerce Full Stack
+#  Level Up Gamer - E-commerce Full Stack
 
 **Level Up Gamer** es una plataforma de comercio electrónico diseñada para la venta de hardware y periféricos gaming. Este proyecto implementa una arquitectura Full Stack robusta, separando el Frontend (React) del Backend (Spring Boot), con una base de datos relacional (MySQL) y autenticación segura.
 
-## 🚀 Tecnologías Utilizadas
+##  Tecnologías Utilizadas
 
 ### Frontend
 * **Framework:** React 18
@@ -20,7 +20,7 @@
 
 ---
 
-## ⚙️ Funcionalidades Principales
+##  Funcionalidades Principales
 
 1.  **Catálogo de Productos:** Visualización dinámica, filtrado por categorías y búsqueda en tiempo real.
 2.  **Carrito de Compras:** Persistencia local, cálculo de subtotales y gestión de stock.
@@ -34,7 +34,7 @@
 
 ---
 
-## 🛠️ Instalación y Configuración
+##  Instalación y Configuración
 
 Sigue estos pasos para ejecutar el proyecto en tu entorno local.
 
